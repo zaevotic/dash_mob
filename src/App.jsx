@@ -3,6 +3,7 @@ import { DashboardProvider } from './context/DashboardContext';
 import { ClockHUD } from './components/ClockHUD';
 import { AlarmCenter } from './components/AlarmCenter';
 import { StorageMonitor } from './components/StorageMonitor';
+import { StorageDirectoryPanel } from './components/StorageDirectoryPanel';
 import { Clock, Bell, HardDrive, Smartphone } from 'lucide-react';
 
 const MainLayout = () => {
@@ -95,7 +96,7 @@ const MainLayout = () => {
                 <AlarmCenter />
               </div>
               <div style={{ flexShrink: 0, minHeight: 0 }}>
-                <StorageMonitor />
+                <StorageMonitor onNavigateToStorage={() => setActiveTab('storage')} />
               </div>
             </div>
           </div>
@@ -115,7 +116,7 @@ const MainLayout = () => {
 
         {activeTab === 'storage' && (
           <div style={{ height: '100%', minHeight: 0 }}>
-            <StorageMonitor />
+            <StorageDirectoryPanel />
           </div>
         )}
       </main>
