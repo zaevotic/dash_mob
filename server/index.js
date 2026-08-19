@@ -18,7 +18,7 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
-const PORT = process.env.PORT || (process.env.NODE_ENV === 'development' ? 3001 : 3000);
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -36,7 +36,7 @@ if (!fs.existsSync(TONES_DIR)) {
 }
 app.use('/uploads/tones', express.static(TONES_DIR));
 
-// Handle HTTP upgrade requests for WebSocket
+// Handle HTTP upgrade requests for WebSocket on /ws
 server.on('upgrade', (request, socket, head) => {
   wss.handleUpgrade(request, socket, head, (ws) => {
     wss.emit('connection', ws, request);
@@ -140,26 +140,41 @@ setInterval(() => {
   }
 }, 10000);
 
-// Serve built frontend assets in production mode
+// Integrate Frontend (Vite Dev Middleware or Static Production Bundle)
 const DIST_DIR = path.join(__dirname, '../dist');
-if (fs.existsSync(DIST_DIR)) {
+const isProduction = process.env.NODE_ENV === 'production' || fs.existsSync(DIST_DIR);
+
+if (isProduction && fs.existsSync(DIST_DIR)) {
+  console.log('[Server] Serving production frontend build from dist/');
   app.use(express.static(DIST_DIR));
   app.get('*', (req, res) => {
     res.sendFile(path.join(DIST_DIR, 'index.html'));
   });
+} else {
+  console.log('[Server] Integrating Vite development middleware on port', PORT);
+  try {
+    const { createServer: createViteServer } = await import('vite');
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa'
+    });
+    app.use(vite.middlewares);
+  } catch (err) {
+    console.error('[Server Error] Could not load Vite dev middleware:', err);
+  }
 }
 
 function startServer(portToTry) {
   server.listen(portToTry, '0.0.0.0', () => {
     console.log(`====================================================`);
-    console.log(` DashMob Server Running on http://0.0.0.0:${portToTry}`);
-    console.log(` SD Card / Uploads folder: ${resolveStoragePath()}`);
+    console.log(` DashMob Full-Stack Server Running on http://0.0.0.0:${portToTry}`);
+    console.log(` SD Card / Storage folder: ${resolveStoragePath()}`);
     console.log(` Tones folder: ${TONES_DIR}`);
     console.log(`====================================================`);
   }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE' && portToTry === 3000) {
-      console.log(`[Server] Port 3000 in use, trying port 3001...`);
-      startServer(3001);
+    if (err.code === 'EADDRINUSE') {
+      console.log(`[Server] Port ${portToTry} in use, trying port ${portToTry + 1}...`);
+      startServer(portToTry + 1);
     } else {
       console.error('[Server Error]', err);
     }
