@@ -2,168 +2,144 @@ import React, { useState } from 'react';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
 import { ClockHUD } from './components/ClockHUD';
 import { AlarmCenter } from './components/AlarmCenter';
-import { HabitMatrix } from './components/HabitMatrix';
 import { MediaOffloader } from './components/MediaOffloader';
 import { StorageMonitor } from './components/StorageMonitor';
 import { RemoteController } from './components/RemoteController';
-import { Clock, Bell, Zap, Film, HardDrive, Sliders, Smartphone, Laptop } from 'lucide-react';
+import { Clock, Bell, Film, Laptop, Smartphone } from 'lucide-react';
 
 const MainLayout = () => {
-  const { settings, updateSettings, system } = useDashboard();
+  const { system } = useDashboard();
   const [activeTab, setActiveTab] = useState('all');
 
-  const currentMode = settings?.activeDashboardMode || 'clock';
-
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 20px', width: '100%' }}>
-      {/* Navbar Brand Header */}
+    <div style={{ 
+      width: '100vw', 
+      height: '100dvh', 
+      maxHeight: '100dvh',
+      display: 'flex', 
+      flexDirection: 'column', 
+      padding: '10px 14px', 
+      overflow: 'hidden',
+      boxSizing: 'border-box'
+    }}>
+      {/* Compact Navbar Header */}
       <header style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        paddingBottom: '16px',
-        marginBottom: '24px',
-        borderBottom: '1px solid var(--border)'
+        paddingBottom: '8px',
+        marginBottom: '8px',
+        borderBottom: '1px solid var(--border)',
+        flexShrink: 0,
+        height: '42px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ 
-            width: '38px', 
-            height: '38px', 
+            width: '30px', 
+            height: '30px', 
             background: 'var(--red)', 
-            borderRadius: '8px', 
+            borderRadius: '6px', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
             boxShadow: 'var(--shadow-ember)'
           }}>
-            <Smartphone size={22} style={{ color: '#fff' }} />
+            <Smartphone size={18} style={{ color: '#fff' }} />
           </div>
           <div>
-            <h1 className="font-display" style={{ fontSize: '1.8rem', letterSpacing: '1px', color: 'var(--text)', lineHeight: '1' }}>
+            <h1 className="font-display" style={{ fontSize: '1.4rem', letterSpacing: '1px', color: 'var(--text)', lineHeight: '1' }}>
               DASH<span style={{ color: 'var(--red-ember)' }}>MOB</span>
             </h1>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
-              ANDROID RESURRECTION HUD & SERVER
-            </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Navigation Viewport Tabs */}
+        <div style={{ display: 'flex', gap: '6px' }}>
           <button 
             className={activeTab === 'all' ? 'btn-primary' : ''} 
             onClick={() => setActiveTab('all')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            style={{ fontSize: '0.75rem', padding: '4px 10px' }}
           >
-            <Clock size={14} /> FULL HUD
+            <Clock size={13} /> FULL HUD
           </button>
           <button 
             className={activeTab === 'clock' ? 'btn-primary' : ''} 
             onClick={() => setActiveTab('clock')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            style={{ fontSize: '0.75rem', padding: '4px 10px' }}
           >
-            <Clock size={14} /> CLOCK DOCK
+            <Clock size={13} /> CLOCK
           </button>
           <button 
             className={activeTab === 'alarms' ? 'btn-primary' : ''} 
             onClick={() => setActiveTab('alarms')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            style={{ fontSize: '0.75rem', padding: '4px 10px' }}
           >
-            <Bell size={14} /> ALARMS
-          </button>
-          <button 
-            className={activeTab === 'habits' ? 'btn-primary' : ''} 
-            onClick={() => setActiveTab('habits')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-          >
-            <Zap size={14} /> HABITS
+            <Bell size={13} /> ALARMS
           </button>
           <button 
             className={activeTab === 'media' ? 'btn-primary' : ''} 
             onClick={() => setActiveTab('media')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            style={{ fontSize: '0.75rem', padding: '4px 10px' }}
           >
-            <Film size={14} /> MEDIA
+            <Film size={13} /> MEDIA
           </button>
           <button 
             className={activeTab === 'remote' ? 'btn-amber' : ''} 
             onClick={() => setActiveTab('remote')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            style={{ fontSize: '0.75rem', padding: '4px 10px' }}
           >
-            <Laptop size={14} /> PC REMOTE
+            <Laptop size={13} /> REMOTE
           </button>
         </div>
       </header>
 
-      {/* Main Content Layout Views */}
-      {activeTab === 'clock' && (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <ClockHUD />
-        </div>
-      )}
+      {/* Main Viewport Container - Zero Page Overflow */}
+      <main style={{ flex: 1, height: 'calc(100dvh - 64px)', minHeight: 0, overflow: 'hidden', width: '100%' }}>
+        {activeTab === 'all' && (
+          <div className="viewport-grid">
+            <div className="grid-col-clock">
+              <ClockHUD />
+            </div>
+            <div style={{ minHeight: 0, height: '100%' }}>
+              <AlarmCenter />
+            </div>
+            <div style={{ minHeight: 0, height: '100%' }}>
+              <MediaOffloader />
+            </div>
+            <div style={{ minHeight: 0, height: '100%' }}>
+              <StorageMonitor />
+            </div>
+            <div style={{ minHeight: 0, height: '100%' }}>
+              <RemoteController />
+            </div>
+          </div>
+        )}
 
-      {activeTab === 'alarms' && (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <AlarmCenter />
-        </div>
-      )}
+        {activeTab === 'clock' && (
+          <div style={{ height: '100%', minHeight: 0 }}>
+            <ClockHUD />
+          </div>
+        )}
 
-      {activeTab === 'habits' && (
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <HabitMatrix />
-        </div>
-      )}
-
-      {activeTab === 'media' && (
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <MediaOffloader />
-        </div>
-      )}
-
-      {activeTab === 'remote' && (
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <RemoteController />
-          <MediaOffloader />
-          <StorageMonitor />
-        </div>
-      )}
-
-      {activeTab === 'all' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <ClockHUD />
-          
-          <div className="hud-grid">
+        {activeTab === 'alarms' && (
+          <div style={{ height: '100%', minHeight: 0 }}>
             <AlarmCenter />
+          </div>
+        )}
+
+        {activeTab === 'media' && (
+          <div style={{ height: '100%', minHeight: 0 }}>
+            <MediaOffloader />
+          </div>
+        )}
+
+        {activeTab === 'remote' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', height: '100%', minHeight: 0 }}>
+            <RemoteController />
             <StorageMonitor />
           </div>
-
-          <HabitMatrix />
-          
-          <MediaOffloader />
-
-          <RemoteController />
-        </div>
-      )}
-
-      {/* Footer */}
-      <footer style={{ 
-        marginTop: '40px', 
-        paddingTop: '20px', 
-        borderTop: '1px solid var(--border)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: '0.75rem',
-        color: 'var(--text3)',
-        fontFamily: 'var(--mono)'
-      }}>
-        <div>
-          DASHMOB • REPURPOSED SAMSUNG M34 SERVER
-        </div>
-        <div>
-          {system?.network?.primaryIp ? `LOCAL NODE: http://${system.network.primaryIp}:3000` : 'STANDALONE MODE'}
-        </div>
-      </footer>
+        )}
+      </main>
     </div>
   );
 };

@@ -33,43 +33,12 @@ const defaultData = {
       snoozeMinutes: 10
     }
   ],
-  habits: [
-    {
-      id: 'habit_1',
-      name: 'Deep Work Session (2h)',
-      category: 'Productivity',
-      targetDays: 7,
-      history: {
-        [new Date().toISOString().split('T')[0]]: true
-      },
-      streak: 4,
-      color: 'var(--red-ember)'
-    },
-    {
-      id: 'habit_2',
-      name: 'Hydration & Posture',
-      category: 'Health',
-      targetDays: 7,
-      history: {},
-      streak: 2,
-      color: 'var(--amber)'
-    },
-    {
-      id: 'habit_3',
-      name: 'Read 20 Pages',
-      category: 'Learning',
-      targetDays: 5,
-      history: {},
-      streak: 5,
-      color: 'var(--green)'
-    }
-  ],
   media: [],
   settings: {
     deviceName: 'Samsung M34 Desk Server',
     storagePath: path.join(__dirname, '../uploads'),
     maxStorageGB: 128,
-    activeDashboardMode: 'clock', // 'clock' | 'media' | 'habits' | 'remote'
+    activeDashboardMode: 'clock', // 'clock' | 'media' | 'alarms' | 'remote'
     volume: 80,
     nightModeStart: '22:00',
     nightModeEnd: '06:30'
@@ -86,7 +55,9 @@ class JSONDatabase {
     try {
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
-        return { ...defaultData, ...JSON.parse(raw) };
+        const parsed = JSON.parse(raw);
+        delete parsed.habits; // Clean habits from existing saved file if present
+        return { ...defaultData, ...parsed };
       }
     } catch (err) {
       console.error('[DB] Error loading database file, initializing defaults:', err.message);

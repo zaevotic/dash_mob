@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Plus, Trash2, Volume2, VolumeX, CheckCircle, AlertTriangle, Moon } from 'lucide-react';
+import { Bell, Plus, Trash2, Volume2, AlertTriangle } from 'lucide-react';
 
 const AVAILABLE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const TONES = ['Cyber Pulse', 'Ember Wave', 'Gothic Synth', 'Hyper Alert'];
 
 export const AlarmCenter = () => {
   const {
@@ -21,7 +20,7 @@ export const AlarmCenter = () => {
   const [newTime, setNewTime] = useState('07:30');
   const [newLabel, setNewLabel] = useState('');
   const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  const [selectedTone, setSelectedTone] = useState('Cyber Pulse');
+  const [selectedTone] = useState('Cyber Pulse');
 
   const audioCtxRef = useRef(null);
   const synthTimerRef = useRef(null);
@@ -97,16 +96,16 @@ export const AlarmCenter = () => {
   };
 
   return (
-    <div className="panel-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Bell size={20} style={{ color: 'var(--red-ember)' }} />
-          <h2 style={{ fontSize: '1.2rem', fontFamily: 'var(--mono)', textTransform: 'uppercase' }}>
+    <div className="panel-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Bell size={18} style={{ color: 'var(--red-ember)' }} />
+          <h2 style={{ fontSize: '1rem', fontFamily: 'var(--mono)', textTransform: 'uppercase' }}>
             ALARM HUB
           </h2>
         </div>
-        <button className="btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus size={16} />
+        <button className="btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
+          <Plus size={14} />
           {showAddForm ? 'CANCEL' : 'ADD ALARM'}
         </button>
       </div>
@@ -117,36 +116,35 @@ export const AlarmCenter = () => {
           background: 'var(--bg2)', 
           border: '1px solid var(--border2)', 
           borderRadius: 'var(--radius-sm)', 
-          padding: '16px',
-          marginBottom: '20px'
+          padding: '12px',
+          marginBottom: '12px',
+          flexShrink: 0
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '8px', marginBottom: '8px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text2)', marginBottom: '4px' }}>TIME (HH:MM)</label>
+              <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '2px' }}>TIME</label>
               <input 
                 type="time" 
                 value={newTime} 
                 onChange={(e) => setNewTime(e.target.value)} 
-                style={{ width: '100%', fontSize: '1.2rem' }}
+                style={{ width: '100%', fontSize: '1rem', padding: '6px' }}
                 required 
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text2)', marginBottom: '4px' }}>LABEL / PURPOSE</label>
+              <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '2px' }}>LABEL</label>
               <input 
                 type="text" 
-                placeholder="e.g. Morning Wakeup, Deep Work" 
+                placeholder="Wakeup, Meeting" 
                 value={newLabel} 
                 onChange={(e) => setNewLabel(e.target.value)} 
-                style={{ width: '100%' }}
+                style={{ width: '100%', padding: '6px', fontSize: '0.85rem' }}
               />
             </div>
           </div>
 
-          {/* Days Selection */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text2)', marginBottom: '6px' }}>REPEAT DAYS</label>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               {AVAILABLE_DAYS.map(day => {
                 const active = selectedDays.includes(day);
                 return (
@@ -155,8 +153,8 @@ export const AlarmCenter = () => {
                     key={day}
                     onClick={() => handleDayToggle(day)}
                     style={{
-                      padding: '4px 10px',
-                      fontSize: '0.75rem',
+                      padding: '2px 6px',
+                      fontSize: '0.65rem',
                       fontFamily: 'var(--mono)',
                       background: active ? 'var(--red-mute)' : 'var(--bg1)',
                       borderColor: active ? 'var(--red-ember)' : 'var(--border)',
@@ -170,17 +168,15 @@ export const AlarmCenter = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-            <button type="submit" className="btn-primary">SAVE ALARM</button>
-          </div>
+          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '6px', fontSize: '0.8rem' }}>SAVE ALARM</button>
         </form>
       )}
 
-      {/* Alarms List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Scrollable Alarms List */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0 }}>
         {alarms.length === 0 ? (
-          <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '24px', fontFamily: 'var(--mono)', fontSize: '0.9rem' }}>
-            No alarms configured. Click "Add Alarm" to create one.
+          <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '16px', fontFamily: 'var(--mono)', fontSize: '0.8rem' }}>
+            No alarms configured.
           </div>
         ) : (
           alarms.map(alarm => (
@@ -190,38 +186,38 @@ export const AlarmCenter = () => {
                 background: alarm.enabled ? 'var(--bg2)' : 'var(--bg)',
                 border: `1px solid ${alarm.enabled ? 'var(--border2)' : 'var(--border)'}`,
                 borderRadius: 'var(--radius-sm)',
-                padding: '14px 16px',
+                padding: '10px 12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                opacity: alarm.enabled ? 1 : 0.6
+                opacity: alarm.enabled ? 1 : 0.65
               }}
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                  <span style={{ fontSize: '1.6rem', fontWeight: '700', fontFamily: 'var(--mono)', color: alarm.enabled ? 'var(--red-ember)' : 'var(--text2)' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontSize: '1.3rem', fontWeight: '700', fontFamily: 'var(--mono)', color: alarm.enabled ? 'var(--red-ember)' : 'var(--text2)' }}>
                     {alarm.time}
                   </span>
-                  <span style={{ fontSize: '0.95rem', color: 'var(--text)' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
                     {alarm.label}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
                   {(alarm.days || []).map(day => (
-                    <span key={day} style={{ fontSize: '0.65rem', fontFamily: 'var(--mono)', color: 'var(--amber)', background: 'var(--amber-warm-dim)', padding: '1px 5px', borderRadius: '3px' }}>
+                    <span key={day} style={{ fontSize: '0.6rem', fontFamily: 'var(--mono)', color: 'var(--amber)', background: 'var(--amber-warm-dim)', padding: '1px 4px', borderRadius: '2px' }}>
                       {day}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <button 
                   onClick={() => triggerAlarmTest(alarm.id)} 
-                  title="Test Ring Alarm Remotely/Locally"
-                  style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                  title="Test Ring Alarm Remotely"
+                  style={{ padding: '4px 8px', fontSize: '0.7rem' }}
                 >
-                  <Volume2 size={14} style={{ color: 'var(--amber)' }} />
+                  <Volume2 size={12} style={{ color: 'var(--amber)' }} />
                   TEST
                 </button>
                 <button 
@@ -230,9 +226,9 @@ export const AlarmCenter = () => {
                     background: alarm.enabled ? 'var(--red)' : 'var(--bg3)',
                     borderColor: alarm.enabled ? 'var(--red-ember)' : 'var(--border)',
                     color: alarm.enabled ? '#fff' : 'var(--text3)',
-                    padding: '6px 14px',
+                    padding: '4px 10px',
                     fontFamily: 'var(--mono)',
-                    fontSize: '0.8rem',
+                    fontSize: '0.75rem',
                     fontWeight: '600'
                   }}
                 >
@@ -240,9 +236,9 @@ export const AlarmCenter = () => {
                 </button>
                 <button 
                   onClick={() => deleteAlarm(alarm.id)}
-                  style={{ padding: '6px', color: 'var(--text3)' }}
+                  style={{ padding: '4px', color: 'var(--text3)' }}
                 >
-                  <Trash2 size={15} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             </div>
@@ -258,7 +254,7 @@ export const AlarmCenter = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(10, 9, 8, 0.92)',
+          backgroundColor: 'rgba(10, 9, 8, 0.95)',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
@@ -269,34 +265,34 @@ export const AlarmCenter = () => {
             className="alarm-ringing-overlay"
             style={{
               width: '100%',
-              maxWidth: '480px',
+              maxWidth: '440px',
               borderRadius: 'var(--radius-lg)',
               border: '2px solid var(--red-ember)',
-              padding: '40px 24px',
+              padding: '32px 20px',
               textAlign: 'center',
               boxShadow: 'var(--shadow-ember)'
             }}
           >
-            <AlertTriangle size={64} style={{ color: '#fff', marginBottom: '16px' }} />
-            <h1 style={{ fontSize: '3.5rem', fontFamily: 'var(--mono)', fontWeight: '900', color: '#fff', margin: '10px 0' }}>
+            <AlertTriangle size={56} style={{ color: '#fff', marginBottom: '12px' }} />
+            <h1 style={{ fontSize: '3rem', fontFamily: 'var(--mono)', fontWeight: '900', color: '#fff', margin: '8px 0' }}>
               {activeAlarm.time}
             </h1>
-            <h2 style={{ fontSize: '1.4rem', color: 'var(--text)', marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginBottom: '24px' }}>
               {activeAlarm.label}
             </h2>
 
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button 
                 onClick={snoozeAlarm} 
                 className="btn-amber"
-                style={{ padding: '14px 28px', fontSize: '1.1rem', fontWeight: '700' }}
+                style={{ padding: '12px 20px', fontSize: '1rem', fontWeight: '700' }}
               >
                 SNOOZE (5M)
               </button>
               <button 
                 onClick={dismissAlarm} 
                 className="btn-primary"
-                style={{ padding: '14px 28px', fontSize: '1.1rem', fontWeight: '700' }}
+                style={{ padding: '12px 20px', fontSize: '1rem', fontWeight: '700' }}
               >
                 DISMISS
               </button>

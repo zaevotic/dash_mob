@@ -9,7 +9,6 @@ import { fileURLToPath } from 'url';
 import { db } from './db.js';
 import filesRouter from './routes/files.js';
 import alarmsRouter from './routes/alarms.js';
-import habitsRouter from './routes/habits.js';
 import systemRouter from './routes/system.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,7 +53,6 @@ wss.on('connection', (ws) => {
     payload: {
       alarms: db.get('alarms') || [],
       activeAlarm: db.get('activeAlarm'),
-      habits: db.get('habits') || [],
       media: db.get('media') || [],
       settings: db.get('settings') || {}
     }
@@ -63,10 +61,8 @@ wss.on('connection', (ws) => {
   ws.on('message', (messageRaw) => {
     try {
       const { type, payload } = JSON.parse(messageRaw.toString());
-      console.log(`[WSS] Received event: ${type}`);
 
       if (type === 'REMOTE_COMMAND') {
-        // e.g. change active dashboard view mode remotely
         if (payload.action === 'CHANGE_MODE') {
           const settings = db.get('settings') || {};
           settings.activeDashboardMode = payload.mode;
@@ -89,7 +85,6 @@ wss.on('connection', (ws) => {
 // API Routes
 app.use('/api/files', filesRouter);
 app.use('/api/alarms', alarmsRouter);
-app.use('/api/habits', habitsRouter);
 app.use('/api/system', systemRouter);
 
 // Background alarm trigger loop (checks every 10 seconds)
@@ -108,7 +103,7 @@ setInterval(() => {
   const alarms = db.get('alarms') || [];
   const activeAlarm = db.get('activeAlarm');
 
-  if (activeAlarm) return; // Already ringing
+  if (activeAlarm) return;
 
   const matchingAlarm = alarms.find(a => {
     if (!a.enabled) return false;

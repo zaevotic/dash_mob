@@ -1,16 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { HardDrive, Upload, Film, Music, Trash2, Play, Pause, MonitorPlay, X } from 'lucide-react';
+import { Upload, Film, Music, Trash2, Play, MonitorPlay, X } from 'lucide-react';
 
 export const MediaOffloader = () => {
   const { media, currentPlayingMedia, setCurrentPlayingMedia, deleteMedia, refreshAllData } = useDashboard();
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const fileInputRef = useRef(null);
   const mediaRef = useRef(null);
-  const canvasRef = useRef(null);
 
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
@@ -56,12 +54,12 @@ export const MediaOffloader = () => {
   };
 
   return (
-    <div className="panel-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Film size={20} style={{ color: 'var(--red-ember)' }} />
-          <h2 style={{ fontSize: '1.2rem', fontFamily: 'var(--mono)', textTransform: 'uppercase' }}>
-            MEDIA OFFLOADER & PLAYER
+    <div className="panel-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Film size={18} style={{ color: 'var(--red-ember)' }} />
+          <h2 style={{ fontSize: '1rem', fontFamily: 'var(--mono)', textTransform: 'uppercase' }}>
+            MEDIA OFFLOADER
           </h2>
         </div>
       </div>
@@ -71,24 +69,21 @@ export const MediaOffloader = () => {
         <div style={{ 
           background: 'var(--bg2)', 
           border: '1px solid var(--red-ember)', 
-          borderRadius: 'var(--radius-md)', 
-          padding: '16px', 
-          marginBottom: '20px',
-          boxShadow: 'var(--shadow-ember)'
+          borderRadius: 'var(--radius-sm)', 
+          padding: '10px', 
+          marginBottom: '10px',
+          boxShadow: 'var(--shadow-ember)',
+          flexShrink: 0
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--red-ember)', fontFamily: 'var(--mono)', fontSize: '0.85rem' }}>
-              <MonitorPlay size={16} />
-              NOW PLAYING ON DESK HUB
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--red-ember)', fontFamily: 'var(--mono)', fontSize: '0.75rem' }}>
+              <MonitorPlay size={14} />
+              PLAYING NOW
             </div>
-            <button onClick={() => setCurrentPlayingMedia(null)} style={{ padding: '4px', background: 'transparent', border: 'none' }}>
-              <X size={16} />
+            <button onClick={() => setCurrentPlayingMedia(null)} style={{ padding: '2px', background: 'transparent', border: 'none' }}>
+              <X size={14} />
             </button>
           </div>
-
-          <h3 style={{ fontSize: '1rem', marginBottom: '12px', color: 'var(--text)' }}>
-            {currentPlayingMedia.originalname}
-          </h3>
 
           {currentPlayingMedia.type === 'video' ? (
             <video 
@@ -96,7 +91,7 @@ export const MediaOffloader = () => {
               src={currentPlayingMedia.url} 
               controls 
               autoPlay 
-              style={{ width: '100%', borderRadius: 'var(--radius-sm)', maxHeight: '320px', background: '#000' }} 
+              style={{ width: '100%', borderRadius: 'var(--radius-sm)', maxHeight: '180px', background: '#000' }} 
             />
           ) : (
             <audio 
@@ -104,7 +99,7 @@ export const MediaOffloader = () => {
               src={currentPlayingMedia.url} 
               controls 
               autoPlay 
-              style={{ width: '100%', marginTop: '8px' }} 
+              style={{ width: '100%' }} 
             />
           )}
         </div>
@@ -117,13 +112,14 @@ export const MediaOffloader = () => {
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
         style={{
-          border: `2px dashed ${dragActive ? 'var(--red-ember)' : 'var(--border2)'}`,
-          borderRadius: 'var(--radius-md)',
-          padding: '28px 16px',
+          border: `1px dashed ${dragActive ? 'var(--red-ember)' : 'var(--border2)'}`,
+          borderRadius: 'var(--radius-sm)',
+          padding: '12px 10px',
           textAlign: 'center',
           background: dragActive ? 'var(--red-mute)' : 'var(--bg2)',
           cursor: 'pointer',
-          marginBottom: '20px',
+          marginBottom: '10px',
+          flexShrink: 0,
           transition: 'all 0.2s ease'
         }}
       >
@@ -135,24 +131,24 @@ export const MediaOffloader = () => {
           style={{ display: 'none' }} 
           accept="video/*,audio/*,image/*"
         />
-        <Upload size={32} style={{ color: 'var(--red-ember)', marginBottom: '8px' }} />
-        <div style={{ fontWeight: '600', fontSize: '0.95rem', color: 'var(--text)' }}>
-          {uploading ? 'OFFLOADING FILES TO PHONE STORAGE...' : 'OFFLOAD MEDIA FROM PC TO PHONE'}
+        <Upload size={20} style={{ color: 'var(--red-ember)', marginBottom: '4px' }} />
+        <div style={{ fontWeight: '600', fontSize: '0.8rem', color: 'var(--text)' }}>
+          {uploading ? 'OFFLOADING FILES...' : 'OFFLOAD MEDIA TO PHONE'}
         </div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text2)', marginTop: '4px', fontFamily: 'var(--mono)' }}>
-          Drag & drop MP4, MKV, MP3, WAV files to store on phone's SD Card
+        <div style={{ fontSize: '0.65rem', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
+          Drop MP4, MKV, MP3 files
         </div>
       </div>
 
-      {/* Offloaded Media Vault List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <h4 style={{ fontSize: '0.8rem', fontFamily: 'var(--mono)', color: 'var(--text2)', textTransform: 'uppercase' }}>
-          STORED MEDIA VAULT ({media.length} ITEMS)
-        </h4>
+      {/* Scrollable Media Vault List */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>
+        <div style={{ fontSize: '0.7rem', fontFamily: 'var(--mono)', color: 'var(--text2)', textTransform: 'uppercase' }}>
+          MEDIA VAULT ({media.length})
+        </div>
 
         {media.length === 0 ? (
-          <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '20px', fontFamily: 'var(--mono)', fontSize: '0.85rem' }}>
-            No media offloaded yet. Drop files above to transfer.
+          <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '12px', fontFamily: 'var(--mono)', fontSize: '0.75rem' }}>
+            No media files offloaded.
           </div>
         ) : (
           media.map(item => (
@@ -162,38 +158,38 @@ export const MediaOffloader = () => {
                 background: 'var(--bg2)',
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)',
-                padding: '10px 14px',
+                padding: '8px 10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                {item.type === 'video' ? <Film size={18} style={{ color: 'var(--red-ember)', flexShrink: 0 }} /> : <Music size={18} style={{ color: 'var(--amber)', flexShrink: 0 }} />}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                {item.type === 'video' ? <Film size={15} style={{ color: 'var(--red-ember)', flexShrink: 0 }} /> : <Music size={15} style={{ color: 'var(--amber)', flexShrink: 0 }} />}
                 <div style={{ overflow: 'hidden' }}>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {item.originalname}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
-                    {formatBytes(item.size)} • {new Date(item.uploadDate).toLocaleDateString()}
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                    {formatBytes(item.size)}
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                 <button 
                   onClick={() => setCurrentPlayingMedia(item)} 
                   className="btn-primary" 
-                  style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+                  style={{ padding: '4px 8px', fontSize: '0.7rem' }}
                 >
-                  <Play size={12} />
+                  <Play size={10} />
                   PLAY
                 </button>
                 <button 
                   onClick={() => deleteMedia(item.id)} 
-                  style={{ padding: '5px', color: 'var(--text3)' }}
+                  style={{ padding: '4px', color: 'var(--text3)' }}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                 </button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 # DashMob
 > **The Ultimate Resurrection Formula for an Old Android Phone**
 
-Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a sleek, high-tech desk dashboard, customizable alarm clock, daily habit tracker, and 128GB local network media storage server.
+Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a sleek, high-tech desk dashboard, customizable alarm clock, media vault, and 128GB local network media storage server.
 
 ![DashMob HUD](https://img.shields.io/badge/Aesthetic-Cyber%20HUD-red)
 ![Node.js](https://img.shields.io/badge/Backend-Node.js%20%2B%20WebSockets-green)
@@ -21,19 +21,14 @@ Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a slee
    - Built-in Web Audio API sound synthesizer ringing tone.
    - Remote Test Ringing: test or trigger alarm tones remotely from your laptop or main phone.
 
-3. **Daily Habit Matrix**
-   - Interactive daily habit checklist with automatic streak counter (`4d`).
-   - History tracker over the past 7 days.
-   - Category filtering (Productivity, Health, Learning, Mindfulness).
-
-4. **128GB Local Storage & Media Offloader**
+3. **128GB Local Storage & Media Offloader**
    - Offload movies, TV shows, videos, and music directly from your laptop or main phone to the old phone over Wi-Fi.
    - Up to 128GB SD Card capacity monitor and file manager.
    - Built-in audio/video media player.
 
-5. **Local Network Remote Controller (PC & Phone Management)**
+4. **Local Network Remote Controller (PC & Phone Management)**
    - Access `http://<phone-ip>:3000` from any browser on your laptop or primary phone.
-   - Real-time WebSockets synchronization: changing settings, uploading media, checking off habits, or editing alarms instantly updates the desk phone display.
+   - Real-time WebSockets synchronization: changing settings, uploading media, or editing alarms instantly updates the desk phone display.
 
 ---
 

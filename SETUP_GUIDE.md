@@ -83,10 +83,9 @@ Once DashMob is running on your Wi-Fi network:
    - Go to the **MEDIA** tab or **PC REMOTE** tab.
    - Drag & drop video files (MP4, MKV) or audio files (MP3, WAV) to offload them to your old phone's storage.
    - Click **PLAY** to start playing media on your desk phone screen!
-3. **Manage Alarms & Habits Remotely**:
+3. **Manage Alarms Remotely**:
    - Create or toggle alarms from your PC desk.
    - Click **TEST RING** to trigger an alarm sound test on your old phone speaker over Wi-Fi.
-   - Check off daily habit completions from your main phone or PC.
 
 ---
 
