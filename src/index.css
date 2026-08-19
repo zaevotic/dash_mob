@@ -1,0 +1,246 @@
+:root {
+  /* ── Background layers ────────────────────────────── */
+  --bg:          #0a0908;   /* void — global app backdrop canvas          */
+  --bg1:         #120d0c;   /* panel — primary panel container backgrounds */
+  --bg2:         #161010;   /* panel-alt — header accents, card backdrops  */
+  --bg3:         #1e1410;   /* high-density active interactive block layers */
+
+  /* ── Borders ──────────────────────────────────────── */
+  --border:      #2b1414;   /* base layout dividing borders                */
+  --border2:     #4a1a1f;   /* high-contrast dividers & ghost buttons       */
+
+  /* ── Text ─────────────────────────────────────────── */
+  --text:        #d9d2c4;   /* bone — primary headers and fields           */
+  --text2:       #7a736a;   /* muted — body text and content summaries     */
+  --text3:       #4a453f;   /* muted-dim — faint labels, timestamps        */
+
+  /* ── Red accent ───────────────────────────────────── */
+  --red:         #b6182b;   /* primary interactive highlight accent        */
+  --red-ember:   #ff2436;   /* brightest red — hover glows, active dots    */
+  --red-dim:     #5c1018;   /* subtle indicator markers, item dot frames   */
+  --red-mute:    #3d1f18;   /* selected panel highlights, badge layers     */
+
+  /* ── Hover states ─────────────────────────────────── */
+  --red-hover-tint: rgba(182, 24, 43, 0.03); /* subtle interactive hover highlight */
+
+  /* ── Secondary accents ────────────────────────────── */
+  --amber:       #c47c2e;   /* warning tags, code variables                */
+  --amber-dim:   #8a5420;   /* darker structural code/warning annotations  */
+  --amber-warm:  #3d2e14;   /* warm amber — journal tags, secondary borders */
+  --amber-warm-dim: #2a1e0e; /* deep warm amber — tag backgrounds */
+  --green:       #5a8a4a;   /* success text, status indicators             */
+  --green-dim:   #2e4a22;   /* background fills for notification slots     */
+
+  /* ── Font stacks ──────────────────────────────────── */
+  --mono:        'JetBrains Mono', 'Fira Code', monospace;
+  --sans:        'Inter', system-ui, sans-serif;
+  --display:     'Pirata One', 'Orbitron', serif;   /* blackletter / sci-fi — brand wordmark */
+
+  /* ── Radii & Shadows ────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-ember: 0 0 25px rgba(255, 36, 54, 0.15), 0 0 5px rgba(184, 24, 43, 0.3);
+  --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Background Cyber Canvas Grid */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: 
+    radial-gradient(circle at 50% 10%, rgba(182, 24, 43, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 85% 85%, rgba(196, 124, 46, 0.04) 0%, transparent 50%),
+    linear-gradient(to bottom, var(--bg), var(--bg1));
+  background-attachment: fixed;
+}
+
+/* Typography Utilities */
+.font-mono { font-family: var(--mono); }
+.font-sans { font-family: var(--sans); }
+.font-display { font-family: var(--display); }
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--red);
+}
+
+/* Buttons & Interactive Elements */
+button {
+  font-family: var(--sans);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button:hover {
+  background: var(--bg3);
+  border-color: var(--border2);
+  color: var(--text);
+  box-shadow: 0 0 12px rgba(182, 24, 43, 0.2);
+}
+
+button.btn-primary {
+  background: var(--red);
+  border-color: var(--red-ember);
+  color: #fff;
+  font-weight: 600;
+}
+button.btn-primary:hover {
+  background: var(--red-ember);
+  box-shadow: var(--shadow-ember);
+}
+
+button.btn-amber {
+  background: var(--amber-warm);
+  border-color: var(--amber);
+  color: var(--text);
+}
+button.btn-amber:hover {
+  background: var(--amber);
+  color: #000;
+}
+
+input, select, textarea {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--mono);
+  outline: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--red-ember);
+  box-shadow: 0 0 8px rgba(255, 36, 54, 0.25);
+}
+
+/* Glassmorphism Panel Container */
+.panel-card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-panel);
+  position: relative;
+  overflow: hidden;
+}
+.panel-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+}
+.panel-card.active-ember {
+  border-color: var(--border2);
+}
+.panel-card.active-ember::before {
+  background: linear-gradient(90deg, transparent, var(--red-ember), transparent);
+}
+
+/* Status Badges */
+.badge {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-red {
+  background: var(--red-mute);
+  color: var(--red-ember);
+  border: 1px solid var(--red-dim);
+}
+.badge-amber {
+  background: var(--amber-warm-dim);
+  color: var(--amber);
+  border: 1px solid var(--amber-warm);
+}
+.badge-green {
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+/* Active Ringing Alarm Pulse Keyframes */
+@keyframes alarmPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 36, 54, 0.6);
+    background-color: var(--red-dim);
+  }
+  50% {
+    box-shadow: 0 0 50px 20px rgba(255, 36, 54, 0.4);
+    background-color: var(--red);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 36, 54, 0.6);
+    background-color: var(--red-dim);
+  }
+}
+
+.alarm-ringing-overlay {
+  animation: alarmPulse 1.2s infinite ease-in-out;
+}
+
+/* High-tech Clock Glow */
+.clock-display {
+  font-family: var(--mono);
+  color: var(--text);
+  text-shadow: 0 0 20px rgba(217, 210, 196, 0.3), 0 0 40px rgba(182, 24, 43, 0.2);
+  letter-spacing: 2px;
+}
+.clock-seconds {
+  color: var(--red-ember);
+  text-shadow: 0 0 12px rgba(255, 36, 54, 0.6);
+}
+
+/* Responsive Grid Layouts */
+.hud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
