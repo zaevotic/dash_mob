@@ -4,6 +4,7 @@ import { ClockHUD } from './components/ClockHUD';
 import { AlarmCenter } from './components/AlarmCenter';
 import { StorageMonitor } from './components/StorageMonitor';
 import { StorageDirectoryPanel } from './components/StorageDirectoryPanel';
+import { NowPlaying } from './components/NowPlaying';
 import { Clock, Bell, HardDrive, Smartphone } from 'lucide-react';
 
 const MainLayout = () => {
@@ -93,7 +94,7 @@ const MainLayout = () => {
 
             <div className="hud-col-side">
               <div style={{ flex: 1, minHeight: 0 }}>
-                <AlarmCenter />
+                <NowPlaying />
               </div>
               <div style={{ flexShrink: 0, minHeight: 0 }}>
                 <StorageMonitor onNavigateToStorage={() => setActiveTab('storage')} />

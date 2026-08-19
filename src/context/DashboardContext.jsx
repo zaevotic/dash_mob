@@ -7,6 +7,12 @@ export const DashboardProvider = ({ children }) => {
   const [activeAlarm, setActiveAlarm] = useState(null);
   const [availableTones, setAvailableTones] = useState([]);
   const [media, setMedia] = useState([]);
+  const [playbackState, setPlaybackState] = useState({
+    currentMedia: null,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0
+  });
   const [settings, setSettings] = useState({
     deviceName: 'Samsung M34 Desk Server',
     maxStorageGB: 128,
@@ -15,7 +21,6 @@ export const DashboardProvider = ({ children }) => {
   });
   const [system, setSystem] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [currentPlayingMedia, setCurrentPlayingMedia] = useState(null);
 
   const wsRef = useRef(null);
 
@@ -60,18 +65,14 @@ export const DashboardProvider = ({ children }) => {
 
     const connectWS = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      // Use window.location.host or fallback to primary IP
       const host = window.location.host;
       const wsUrl = `${protocol}//${host}/ws`;
-
-      console.log('[DashboardContext] Connecting WebSocket to', wsUrl);
 
       try {
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('[DashboardContext] WebSocket Connected to Server!');
           setIsConnected(true);
         };
 
@@ -84,6 +85,7 @@ export const DashboardProvider = ({ children }) => {
                 if (payload.alarms) setAlarms(payload.alarms);
                 if (payload.activeAlarm !== undefined) setActiveAlarm(payload.activeAlarm);
                 if (payload.media) setMedia(payload.media);
+                if (payload.playbackState) setPlaybackState(payload.playbackState);
                 if (payload.settings) setSettings(payload.settings);
                 break;
               case 'ALARMS_UPDATED':
@@ -100,11 +102,11 @@ export const DashboardProvider = ({ children }) => {
               case 'MEDIA_UPDATED':
                 setMedia(payload);
                 break;
+              case 'PLAYBACK_UPDATED':
+                setPlaybackState(prev => ({ ...prev, ...payload }));
+                break;
               case 'SETTINGS_UPDATED':
                 setSettings(payload);
-                break;
-              case 'REMOTE_PLAY_MEDIA':
-                setCurrentPlayingMedia(payload);
                 break;
               default:
                 break;
@@ -143,6 +145,53 @@ export const DashboardProvider = ({ children }) => {
       if (wsRef.current) wsRef.current.close();
     };
   }, []);
+
+  // Sync playback state change across network
+  const sendPlaybackUpdate = (updateObj) => {
+    const updated = { ...playbackState, ...updateObj };
+    setPlaybackState(updated);
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'PLAYBACK_UPDATE',
+        payload: updateObj
+      }));
+    }
+  };
+
+  const playMedia = (mediaItem) => {
+    sendPlaybackUpdate({
+      currentMedia: mediaItem,
+      isPlaying: true,
+      currentTime: 0
+    });
+  };
+
+  const togglePlayPause = () => {
+    sendPlaybackUpdate({
+      isPlaying: !playbackState.isPlaying
+    });
+  };
+
+  const seekPlayback = (time) => {
+    sendPlaybackUpdate({
+      currentTime: time
+    });
+  };
+
+  const playNextMedia = () => {
+    if (!media || media.length === 0) return;
+    const currentIndex = media.findIndex(m => m.id === playbackState.currentMedia?.id);
+    const nextIndex = (currentIndex + 1) % media.length;
+    playMedia(media[nextIndex]);
+  };
+
+  const playPrevMedia = () => {
+    if (!media || media.length === 0) return;
+    const currentIndex = media.findIndex(m => m.id === playbackState.currentMedia?.id);
+    const prevIndex = (currentIndex - 1 + media.length) % media.length;
+    playMedia(media[prevIndex]);
+  };
 
   // Alarm actions with direct state updates & fallback refresh
   const addAlarm = async (alarmData) => {
@@ -234,20 +283,11 @@ export const DashboardProvider = ({ children }) => {
     } catch (e) {}
   };
 
-  // File & Remote actions
+  // File actions
   const deleteMedia = async (id) => {
     const res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
     refreshAllData();
     return res.json();
-  };
-
-  const sendRemoteCommand = (action, payload = {}) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'REMOTE_COMMAND',
-        payload: { action, ...payload }
-      }));
-    }
   };
 
   const updateSettings = async (newSettings) => {
@@ -266,11 +306,16 @@ export const DashboardProvider = ({ children }) => {
       activeAlarm,
       availableTones,
       media,
+      playbackState,
       settings,
       system,
       isConnected,
-      currentPlayingMedia,
-      setCurrentPlayingMedia,
+      playMedia,
+      togglePlayPause,
+      seekPlayback,
+      playNextMedia,
+      playPrevMedia,
+      sendPlaybackUpdate,
       addAlarm,
       toggleAlarm,
       triggerAlarmTest,
@@ -278,7 +323,6 @@ export const DashboardProvider = ({ children }) => {
       snoozeAlarm,
       deleteAlarm,
       deleteMedia,
-      sendRemoteCommand,
       updateSettings,
       refreshAllData,
       fetchTones

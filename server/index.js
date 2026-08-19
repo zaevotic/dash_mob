@@ -66,6 +66,7 @@ wss.on('connection', (ws) => {
       alarms: db.get('alarms') || [],
       activeAlarm: db.get('activeAlarm'),
       media: db.get('media') || [],
+      playbackState: db.get('playbackState') || { currentMedia: null, isPlaying: false, currentTime: 0, duration: 0 },
       settings: db.get('settings') || {}
     }
   }));
@@ -74,14 +75,17 @@ wss.on('connection', (ws) => {
     try {
       const { type, payload } = JSON.parse(messageRaw.toString());
 
-      if (type === 'REMOTE_COMMAND') {
+      if (type === 'PLAYBACK_UPDATE') {
+        const currentPlayback = db.get('playbackState') || {};
+        const newPlayback = { ...currentPlayback, ...payload };
+        db.set('playbackState', newPlayback);
+        broadcast('PLAYBACK_UPDATED', newPlayback);
+      } else if (type === 'REMOTE_COMMAND') {
         if (payload.action === 'CHANGE_MODE') {
           const settings = db.get('settings') || {};
           settings.activeDashboardMode = payload.mode;
           db.set('settings', settings);
           broadcast('SETTINGS_UPDATED', settings);
-        } else if (payload.action === 'PLAY_MEDIA') {
-          broadcast('REMOTE_PLAY_MEDIA', payload.media);
         }
       }
     } catch (e) {

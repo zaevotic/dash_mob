@@ -20,28 +20,24 @@ const defaultData = {
       label: 'Morning Work Focus',
       days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
       enabled: true,
-      tone: 'Cyber Pulse',
+      tone: 'Default Cyber Alarm',
+      toneUrl: '/uploads/tones/default_cyber_alarm.wav',
       snoozeMinutes: 5
-    },
-    {
-      id: 'alarm_2',
-      time: '23:00',
-      label: 'Wind Down & Backup',
-      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      enabled: false,
-      tone: 'Ember Wave',
-      snoozeMinutes: 10
     }
   ],
   media: [],
+  playbackState: {
+    currentMedia: null,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0
+  },
   settings: {
     deviceName: 'Samsung M34 Desk Server',
     storagePath: path.join(__dirname, '../uploads'),
     maxStorageGB: 128,
-    activeDashboardMode: 'clock', // 'clock' | 'media' | 'alarms' | 'remote'
-    volume: 80,
-    nightModeStart: '22:00',
-    nightModeEnd: '06:30'
+    activeDashboardMode: 'clock',
+    volume: 80
   },
   activeAlarm: null
 };
@@ -56,7 +52,7 @@ class JSONDatabase {
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
-        delete parsed.habits; // Clean habits from existing saved file if present
+        delete parsed.habits;
         return { ...defaultData, ...parsed };
       }
     } catch (err) {
