@@ -35,8 +35,8 @@ pkg install nodejs-lts git -y
 ### Step 4: Download & Launch vigild
 ```bash
 # Clone repository
-git clone https://github.com/zaevotic/dash_mob.git
-cd dash_mob
+git clone https://github.com/zaevotic/vigild.git
+cd vigild
 
 # Install dependencies
 npm install
@@ -79,6 +79,6 @@ To automatically start vigild whenever your phone reboots:
 2. In Termux:
    ```bash
    mkdir -p ~/.termux/boot
-   echo "cd ~/dash_mob && npm start" > ~/.termux/boot/start-vigild.sh
+   echo "cd ~/vigild && npm start" > ~/.termux/boot/start-vigild.sh
    chmod +x ~/.termux/boot/start-vigild.sh
    ```
