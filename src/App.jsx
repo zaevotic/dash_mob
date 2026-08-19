@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { DashboardProvider, useDashboard } from './context/DashboardContext';
+import { DashboardProvider } from './context/DashboardContext';
 import { ClockHUD } from './components/ClockHUD';
 import { AlarmCenter } from './components/AlarmCenter';
-import { MediaOffloader } from './components/MediaOffloader';
 import { StorageMonitor } from './components/StorageMonitor';
-import { RemoteController } from './components/RemoteController';
-import { Clock, Bell, Film, Laptop, Smartphone } from 'lucide-react';
+import { Clock, Bell, HardDrive, Smartphone } from 'lucide-react';
 
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -52,7 +50,7 @@ const MainLayout = () => {
         </div>
 
         {/* Navigation Viewport Tabs */}
-        <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
           <button 
             className={activeTab === 'all' ? 'btn-primary' : ''} 
             onClick={() => setActiveTab('all')}
@@ -75,18 +73,11 @@ const MainLayout = () => {
             <Bell size={11} /> ALARMS
           </button>
           <button 
-            className={activeTab === 'media' ? 'btn-primary' : ''} 
-            onClick={() => setActiveTab('media')}
+            className={activeTab === 'storage' ? 'btn-primary' : ''} 
+            onClick={() => setActiveTab('storage')}
             style={{ fontSize: '0.7rem', padding: '3px 8px' }}
           >
-            <Film size={11} /> MEDIA
-          </button>
-          <button 
-            className={activeTab === 'remote' ? 'btn-amber' : ''} 
-            onClick={() => setActiveTab('remote')}
-            style={{ fontSize: '0.7rem', padding: '3px 8px' }}
-          >
-            <Laptop size={11} /> REMOTE
+            <HardDrive size={11} /> STORAGE
           </button>
         </div>
       </header>
@@ -94,23 +85,17 @@ const MainLayout = () => {
       {/* Main Viewport Container - Zero Page Overflow */}
       <main style={{ flex: 1, height: 'calc(100dvh - 50px)', minHeight: 0, width: '100%', overflow: 'hidden' }}>
         {activeTab === 'all' && (
-          <div className="viewport-grid">
-            <div className="grid-col-clock">
+          <div className="hud-layout">
+            <div className="hud-col-main">
               <ClockHUD />
             </div>
 
-            <div className="landscape-right-panel phone-portrait-cards-container">
-              <div style={{ minHeight: 0, height: '100%', minWidth: 0 }}>
+            <div className="hud-col-side">
+              <div style={{ flex: 1, minHeight: 0 }}>
                 <AlarmCenter />
               </div>
-              <div style={{ minHeight: 0, height: '100%', minWidth: 0 }}>
-                <MediaOffloader />
-              </div>
-              <div style={{ minHeight: 0, height: '100%', minWidth: 0 }}>
+              <div style={{ flexShrink: 0, minHeight: 0 }}>
                 <StorageMonitor />
-              </div>
-              <div style={{ minHeight: 0, height: '100%', minWidth: 0 }}>
-                <RemoteController />
               </div>
             </div>
           </div>
@@ -128,15 +113,8 @@ const MainLayout = () => {
           </div>
         )}
 
-        {activeTab === 'media' && (
+        {activeTab === 'storage' && (
           <div style={{ height: '100%', minHeight: 0 }}>
-            <MediaOffloader />
-          </div>
-        )}
-
-        {activeTab === 'remote' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px', height: '100%', minHeight: 0, overflowY: 'auto' }}>
-            <RemoteController />
             <StorageMonitor />
           </div>
         )}

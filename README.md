@@ -1,7 +1,7 @@
 # DashMob
 > **The Ultimate Resurrection Formula for an Old Android Phone**
 
-Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a sleek, high-tech desk dashboard, customizable alarm clock, media vault, and 128GB local network media storage server.
+Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a sleek, high-tech desk dashboard, customizable alarm clock, and 128GB local network media storage server.
 
 ![DashMob HUD](https://img.shields.io/badge/Aesthetic-Cyber%20HUD-red)
 ![Node.js](https://img.shields.io/badge/Backend-Node.js%20%2B%20WebSockets-green)
@@ -11,24 +11,18 @@ Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a slee
 
 ## Key Features
 
-1. **Hi-Tech Desk HUD & Clock (Default Display)**
+1. **Expanded Hi-Tech Desk HUD & Clock (Default Display)**
    - Ambient glowing cyber clock with seconds counter, full date display, and customizable theme layers.
    - High-contrast dark void aesthetic using glowing red embers (`#ff2436`), bone text (`#d9d2c4`), and warm amber accents.
    - Fullscreen Desk Dock Mode for mounted phone displays.
 
 2. **Customizable Alarm Hub & Sound Synthesizer**
-   - Configure repeat alarms with custom labels, day schedules, and tone selectors.
+   - Configure repeat alarms with custom labels, day schedules, and floating modal creation form.
    - Built-in Web Audio API sound synthesizer ringing tone.
-   - Remote Test Ringing: test or trigger alarm tones remotely from your laptop or main phone.
+   - Remote Test Ringing: test or trigger alarm tones remotely over Wi-Fi.
 
-3. **128GB Local Storage & Media Offloader**
-   - Offload movies, TV shows, videos, and music directly from your laptop or main phone to the old phone over Wi-Fi.
-   - Up to 128GB SD Card capacity monitor and file manager.
-   - Built-in audio/video media player.
-
-4. **Local Network Remote Controller (PC & Phone Management)**
-   - Access `http://<phone-ip>:3000` from any browser on your laptop or primary phone.
-   - Real-time WebSockets synchronization: changing settings, uploading media, or editing alarms instantly updates the desk phone display.
+3. **128GB Local Storage Node**
+   - Up to 128GB SD Card capacity monitor and occupied storage indicator.
 
 ---
 
@@ -57,6 +51,16 @@ npm run server
 ```
 
 Open `http://localhost:3000` (or `http://<your-local-ip>:3000`) in any browser.
+
+---
+
+## Planned: Companion Control App
+
+- [ ] Build a separate companion app (Android and/or Linux/Windows) that discovers the DashMob dock on the local network via its IP and connects to it
+- [ ] Companion app can remotely manage alarms on the dock (create/edit/delete)
+- [ ] Companion app can control and queue media playback on the dock
+- [ ] Companion app can push/add songs to the dock's media vault
+- [ ] Companion app can browse/manage the dock's SD card as a filesystem — essentially a personal, self-hosted "my own G-Drive" over the local network
 
 ---
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Plus, Trash2, Volume2, AlertTriangle } from 'lucide-react';
+import { Bell, Plus, Trash2, Volume2, AlertTriangle, X } from 'lucide-react';
 
 const AVAILABLE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -16,7 +16,7 @@ export const AlarmCenter = () => {
     deleteAlarm
   } = useDashboard();
 
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [newTime, setNewTime] = useState('07:30');
   const [newLabel, setNewLabel] = useState('');
   const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
@@ -92,90 +92,29 @@ export const AlarmCenter = () => {
       snoozeMinutes: 5
     });
     setNewLabel('');
-    setShowAddForm(false);
+    setShowAddModal(false);
   };
 
   return (
     <div className="panel-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+      {/* Card Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Bell size={18} style={{ color: 'var(--red-ember)' }} />
-          <h2 style={{ fontSize: '1rem', fontFamily: 'var(--mono)', textTransform: 'uppercase' }}>
+          <h2 style={{ fontSize: '0.95rem', fontFamily: 'var(--mono)', textTransform: 'uppercase' }}>
             ALARM HUB
           </h2>
         </div>
-        <button className="btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
+        <button className="btn-primary" onClick={() => setShowAddModal(true)} style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
           <Plus size={14} />
-          {showAddForm ? 'CANCEL' : 'ADD ALARM'}
+          ADD ALARM
         </button>
       </div>
 
-      {/* Add Alarm Form */}
-      {showAddForm && (
-        <form onSubmit={handleCreate} style={{ 
-          background: 'var(--bg2)', 
-          border: '1px solid var(--border2)', 
-          borderRadius: 'var(--radius-sm)', 
-          padding: '12px',
-          marginBottom: '12px',
-          flexShrink: 0
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '8px', marginBottom: '8px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '2px' }}>TIME</label>
-              <input 
-                type="time" 
-                value={newTime} 
-                onChange={(e) => setNewTime(e.target.value)} 
-                style={{ width: '100%', fontSize: '1rem', padding: '6px' }}
-                required 
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '2px' }}>LABEL</label>
-              <input 
-                type="text" 
-                placeholder="Wakeup, Meeting" 
-                value={newLabel} 
-                onChange={(e) => setNewLabel(e.target.value)} 
-                style={{ width: '100%', padding: '6px', fontSize: '0.85rem' }}
-              />
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '8px' }}>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {AVAILABLE_DAYS.map(day => {
-                const active = selectedDays.includes(day);
-                return (
-                  <button
-                    type="button"
-                    key={day}
-                    onClick={() => handleDayToggle(day)}
-                    style={{
-                      padding: '2px 6px',
-                      fontSize: '0.65rem',
-                      fontFamily: 'var(--mono)',
-                      background: active ? 'var(--red-mute)' : 'var(--bg1)',
-                      borderColor: active ? 'var(--red-ember)' : 'var(--border)',
-                      color: active ? 'var(--red-ember)' : 'var(--text2)'
-                    }}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '6px', fontSize: '0.8rem' }}>SAVE ALARM</button>
-        </form>
-      )}
-
-      {/* Scrollable Alarms List */}
+      {/* Alarm List Container */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0 }}>
         {alarms.length === 0 ? (
-          <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '16px', fontFamily: 'var(--mono)', fontSize: '0.8rem' }}>
+          <div style={{ color: 'var(--text3)', textAlign: 'center', margin: 'auto 0', padding: '16px', fontFamily: 'var(--mono)', fontSize: '0.8rem' }}>
             No alarms configured.
           </div>
         ) : (
@@ -245,6 +184,109 @@ export const AlarmCenter = () => {
           ))
         )}
       </div>
+
+      {/* FLOATING ADD ALARM MODAL OVERLAY */}
+      {showAddModal && (
+        <div 
+          onClick={() => setShowAddModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(10, 9, 8, 0.85)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              background: 'var(--bg1)',
+              border: '1px solid var(--red-ember)',
+              borderRadius: 'var(--radius-md)',
+              padding: '20px',
+              boxShadow: 'var(--shadow-ember)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ fontSize: '1rem', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--text)' }}>
+                NEW ALARM SCHEDULE
+              </div>
+              <button onClick={() => setShowAddModal(false)} style={{ padding: '4px', background: 'transparent', border: 'none', color: 'var(--text2)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>TIME</label>
+                  <input 
+                    type="time" 
+                    value={newTime} 
+                    onChange={(e) => setNewTime(e.target.value)} 
+                    style={{ width: '100%', fontSize: '1.1rem', padding: '6px' }}
+                    required 
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>LABEL</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Work Focus, Morning Wakeup" 
+                    value={newLabel} 
+                    onChange={(e) => setNewLabel(e.target.value)} 
+                    style={{ width: '100%', padding: '8px', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '6px' }}>REPEAT DAYS</label>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  {AVAILABLE_DAYS.map(day => {
+                    const active = selectedDays.includes(day);
+                    return (
+                      <button
+                        type="button"
+                        key={day}
+                        onClick={() => handleDayToggle(day)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.7rem',
+                          fontFamily: 'var(--mono)',
+                          background: active ? 'var(--red-mute)' : 'var(--bg2)',
+                          borderColor: active ? 'var(--red-ember)' : 'var(--border)',
+                          color: active ? 'var(--red-ember)' : 'var(--text2)'
+                        }}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setShowAddModal(false)} style={{ padding: '8px 14px' }}>
+                  CANCEL
+                </button>
+                <button type="submit" className="btn-primary" style={{ padding: '8px 16px' }}>
+                  SAVE ALARM
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ACTIVE RINGING ALARM MODAL OVERLAY */}
       {activeAlarm && (

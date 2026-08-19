@@ -30,89 +30,89 @@ export const ClockHUD = () => {
   const minutes = String(time.getMinutes()).padStart(2, '0');
   const seconds = String(time.getSeconds()).padStart(2, '0');
 
-  const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+  const options = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
   const dateStr = time.toLocaleDateString('en-US', options);
 
   const enabledAlarms = alarms.filter(a => a.enabled);
   const nextAlarm = enabledAlarms.length > 0 ? enabledAlarms[0] : null;
 
   return (
-    <div className="panel-card active-ember" style={{ textAlign: 'center', padding: 'clamp(10px, 1.5vh, 16px)', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+    <div className="panel-card active-ember" style={{ textAlign: 'center', padding: 'clamp(14px, 2vh, 24px)', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
       {/* Top HUD Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className={`badge ${isConnected ? 'badge-green' : 'badge-red'}`}>
-            <Radio size={10} className={isConnected ? 'animate-pulse' : ''} />
+            <Radio size={11} className={isConnected ? 'animate-pulse' : ''} />
             {isConnected ? 'ONLINE' : 'OFFLINE'}
           </span>
           {system?.network?.primaryIp && (
-            <span className="badge badge-amber font-mono" style={{ fontSize: '0.65rem' }}>
-              {system.network.primaryIp}:{system.network.port}
+            <span className="badge badge-amber font-mono" style={{ fontSize: '0.7rem' }}>
+              http://{system.network.primaryIp}:{system.network.port}
             </span>
           )}
         </div>
         <button 
           onClick={toggleFullscreen}
-          style={{ padding: '3px 6px', fontSize: '0.65rem' }}
+          style={{ padding: '4px 8px', fontSize: '0.7rem' }}
           title="Toggle High-Tech Desk Kiosk Mode"
         >
-          {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-          {isFullscreen ? 'EXIT' : 'DOCK'}
+          {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          {isFullscreen ? 'EXIT DOCK' : 'DESK DOCK'}
         </button>
       </div>
 
-      {/* Main Clock Display */}
+      {/* Main Expanded Clock Display */}
       <div style={{ margin: 'auto 0' }}>
         <div 
           className="clock-display" 
           style={{ 
-            fontSize: 'clamp(2.2rem, 7vh, 4.8rem)', 
+            fontSize: 'clamp(3.2rem, 11vh, 6.8rem)', 
             fontWeight: '700',
             lineHeight: '1',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'baseline',
-            gap: '4px'
+            gap: '6px'
           }}
         >
           <span>{hours}:{minutes}</span>
-          <span className="clock-seconds" style={{ fontSize: '0.45em' }}>:{seconds}</span>
+          <span className="clock-seconds" style={{ fontSize: '0.42em' }}>:{seconds}</span>
         </div>
 
         <div style={{ 
           color: 'var(--text2)', 
           fontFamily: 'var(--mono)', 
-          fontSize: 'clamp(0.75rem, 1.5vh, 0.9rem)',
-          marginTop: '4px',
+          fontSize: 'clamp(0.85rem, 2vh, 1.15rem)',
+          marginTop: '8px',
           textTransform: 'uppercase',
-          letterSpacing: '1px'
+          letterSpacing: '2px'
         }}>
           {dateStr}
         </div>
       </div>
 
-      {/* Next Alarm Card */}
+      {/* Next Alarm Summary Card */}
       <div style={{ 
         background: 'var(--bg2)', 
         border: '1px solid var(--border)', 
         borderRadius: 'var(--radius-sm)', 
-        padding: '6px 10px',
+        padding: '10px 14px',
         textAlign: 'left',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-          <Bell size={14} style={{ color: 'var(--red-ember)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+          <Bell size={18} style={{ color: 'var(--red-ember)', flexShrink: 0 }} />
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>NEXT ALARM</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {nextAlarm ? nextAlarm.label : 'None'}
+            <div style={{ fontSize: '0.7rem', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>NEXT SCHEDULED ALARM</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {nextAlarm ? nextAlarm.label : 'None Configured'}
             </div>
           </div>
         </div>
-        <div style={{ fontSize: '1rem', fontWeight: '700', fontFamily: 'var(--mono)', color: nextAlarm ? 'var(--red-ember)' : 'var(--text3)', flexShrink: 0 }}>
+        <div style={{ fontSize: '1.2rem', fontWeight: '700', fontFamily: 'var(--mono)', color: nextAlarm ? 'var(--red-ember)' : 'var(--text3)', flexShrink: 0 }}>
           {nextAlarm ? nextAlarm.time : '--:--'}
         </div>
       </div>
