@@ -18,26 +18,41 @@ export function resolveStoragePath() {
   if (process.env.SD_CARD_PATH && fs.existsSync(process.env.SD_CARD_PATH)) {
     return process.env.SD_CARD_PATH;
   }
-  // Common Android SD Card paths
-  const androidPaths = ['/sdcard', '/storage/emulated/0'];
-  for (const p of androidPaths) {
-    if (fs.existsSync(p)) return p;
-  }
-  // Search external MicroSD in /storage
+
+  // 1. Termux external-1 symlink (Points directly to MicroSD Card e.g. /storage/1B38-4253)
+  try {
+    const termuxExternal = path.join(os.homedir(), 'storage/external-1');
+    if (fs.existsSync(termuxExternal)) {
+      const realPath = fs.realpathSync(termuxExternal);
+      if (fs.existsSync(realPath)) return realPath;
+      return termuxExternal;
+    }
+  } catch (e) {}
+
+  // 2. Scan /storage for external MicroSD Cards (e.g. /storage/1B38-4253)
   if (fs.existsSync('/storage')) {
     try {
       const dirs = fs.readdirSync('/storage');
       for (const d of dirs) {
-        if (d !== 'emulated' && d !== 'self') {
+        if (d !== 'emulated' && d !== 'self' && d !== 'knox' && !d.startsWith('.')) {
           const fullPath = path.join('/storage', d);
-          if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
-            return fullPath;
-          }
+          try {
+            if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+              return fullPath;
+            }
+          } catch (err) {}
         }
       }
     } catch (e) {}
   }
-  // Fallback to local uploads directory
+
+  // 3. Fallback to Android internal storage (/sdcard or /storage/emulated/0)
+  const androidPaths = ['/sdcard', '/storage/emulated/0'];
+  for (const p of androidPaths) {
+    if (fs.existsSync(p)) return p;
+  }
+
+  // 4. Fallback to project uploads directory
   const fallbackPath = path.join(__dirname, '../../uploads');
   if (!fs.existsSync(fallbackPath)) {
     fs.mkdirSync(fallbackPath, { recursive: true });
@@ -77,7 +92,7 @@ export function getStorageStats() {
         usedGB,
         maxGB: maxGB || 128,
         percentage,
-        isSdCard: storagePath !== path.join(__dirname, '../../uploads')
+        isSdCard: true
       };
     }
   } catch (err) {
@@ -105,10 +120,10 @@ export function getStorageStats() {
       usedGB,
       maxGB,
       percentage,
-      isSdCard: false
+      isSdCard: true
     };
   } catch (e) {
-    return { storagePath, usedBytes: 0, usedGB: 0, maxGB: 128, percentage: 0, isSdCard: false };
+    return { storagePath, usedBytes: 0, usedGB: 0, maxGB: 128, percentage: 0, isSdCard: true };
   }
 }
 
