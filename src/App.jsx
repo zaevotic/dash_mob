@@ -1,14 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardProvider } from './context/DashboardContext';
 import { ClockHUD } from './components/ClockHUD';
 import { AlarmCenter } from './components/AlarmCenter';
 import { StorageMonitor } from './components/StorageMonitor';
 import { StorageDirectoryPanel } from './components/StorageDirectoryPanel';
 import { NowPlaying } from './components/NowPlaying';
-import { Clock, Bell, HardDrive, Smartphone } from 'lucide-react';
+import { Clock, Bell, HardDrive, Smartphone, Zap } from 'lucide-react';
 
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('all');
+  const [wakeLockActive, setWakeLockActive] = useState(false);
+
+  // W3C Screen Wake Lock API - Keeps phone screen awake indefinitely
+  useEffect(() => {
+    let wakeLock = null;
+
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          setWakeLockActive(true);
+          console.log('[Screen Wake Lock] Active - Phone screen will stay awake continuously');
+
+          wakeLock.addEventListener('release', () => {
+            setWakeLockActive(false);
+            console.log('[Screen Wake Lock] Released');
+          });
+        }
+      } catch (err) {
+        console.warn('[Screen Wake Lock Not Granted]', err.message);
+        setWakeLockActive(false);
+      }
+    };
+
+    requestWakeLock();
+
+    // Re-acquire Wake Lock when user switches back to DashMob tab/app
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, []);
 
   return (
     <div style={{ 
@@ -49,6 +91,25 @@ const MainLayout = () => {
           <h1 className="font-display" style={{ fontSize: '1.2rem', letterSpacing: '1px', color: 'var(--text)', lineHeight: '1', whiteSpace: 'nowrap' }}>
             DASH<span style={{ color: 'var(--red-ember)' }}>MOB</span>
           </h1>
+
+          {/* Screen Wake Lock Status Badge */}
+          {wakeLockActive && (
+            <span 
+              className="badge font-mono" 
+              style={{ 
+                fontSize: '0.65rem', 
+                background: 'var(--amber-warm-dim)', 
+                color: 'var(--amber)', 
+                borderColor: 'var(--amber-dim)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px'
+              }}
+              title="Screen Wake Lock Active - Phone screen will not turn off or dim"
+            >
+              <Zap size={10} style={{ color: 'var(--amber)' }} /> AWAKE
+            </span>
+          )}
         </div>
 
         {/* Navigation Viewport Tabs */}
