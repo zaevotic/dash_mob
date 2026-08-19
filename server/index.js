@@ -173,7 +173,7 @@ if (isProduction && fs.existsSync(DIST_DIR)) {
 function startServer(portToTry) {
   server.listen(portToTry, '0.0.0.0', () => {
     console.log(`====================================================`);
-    console.log(` DashMob Full-Stack Server Running on http://0.0.0.0:${portToTry}`);
+    console.log(` vigild Full-Stack Server Running on http://0.0.0.0:${portToTry}`);
     console.log(` SD Card / Storage folder: ${resolveStoragePath()}`);
     console.log(` Tones folder: ${TONES_DIR}`);
     console.log(`====================================================`);

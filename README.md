@@ -1,9 +1,9 @@
-# DashMob
+# vigild
 > **The Ultimate Resurrection Formula for an Old Android Phone**
 
 Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a sleek, high-tech desk dashboard, customizable alarm clock, and 128GB local network media storage server.
 
-![DashMob HUD](https://img.shields.io/badge/Aesthetic-Cyber%20HUD-red)
+![vigild HUD](https://img.shields.io/badge/Aesthetic-Cyber%20HUD-red)
 ![Node.js](https://img.shields.io/badge/Backend-Node.js%20%2B%20WebSockets-green)
 ![Storage](https://img.shields.io/badge/Storage-128GB%20SD%20Vault-amber)
 
@@ -16,13 +16,18 @@ Repurpose old or unused Android devices (such as Samsung Galaxy M34) into a slee
    - High-contrast dark void aesthetic using glowing red embers (`#ff2436`), bone text (`#d9d2c4`), and warm amber accents.
    - Fullscreen Desk Dock Mode for mounted phone displays.
 
-2. **Customizable Alarm Hub & Sound Synthesizer**
+2. **Customizable Alarm Hub & Touch QWERTY Keyboard**
    - Configure repeat alarms with custom labels, day schedules, and floating modal creation form.
-   - Built-in Web Audio API sound synthesizer ringing tone.
+   - Touch QWERTY on-screen keyboard pane preventing phone OS software keyboard popups.
+   - Built-in audio tone file support and Web Audio API synthesizer.
    - Remote Test Ringing: test or trigger alarm tones remotely over Wi-Fi.
 
-3. **128GB Local Storage Node**
-   - Up to 128GB SD Card capacity monitor and occupied storage indicator.
+3. **Now Playing Media Widget & YouTube Send to Dock**
+   - Real-time audio and video player with inline preview and fullscreen video mode.
+   - YouTube "Send to Dock" browser extension integration.
+
+4. **128GB Local Storage Node**
+   - Up to 128GB SD Card capacity monitor and terminal-style `ls -al` directory listing table.
 
 ---
 
@@ -40,30 +45,26 @@ Built with a custom dark HUD design system:
 ## Quickstart (Local Development)
 
 ```bash
+# Clone the repository
+git clone https://github.com/zaevotic/dash_mob.git
+cd dash_mob
+
 # Install dependencies
 npm install
 
-# Build frontend production bundle
-npm run build
-
-# Start Node.js server
-npm run server
+# Start full-stack server (Runs API + WebSockets + Frontend on http://localhost:3000)
+npm run dev
 ```
-
-Open `http://localhost:3000` (or `http://<your-local-ip>:3000`) in any browser.
 
 ---
 
 ## Planned: Companion Control App
 
-- [ ] Build a separate companion app (Android and/or Linux/Windows) that discovers the DashMob dock on the local network via its IP and connects to it
-- [ ] Companion app can remotely manage alarms on the dock (create/edit/delete)
-- [ ] Companion app can control and queue media playback on the dock
-- [ ] Companion app can push/add songs to the dock's media vault
-- [ ] Companion app can browse/manage the dock's SD card as a filesystem — essentially a personal, self-hosted "my own G-Drive" over the local network
+- [ ] Build a separate companion app (Android and/or Linux/Windows) that discovers the vigild dock on the local network via its IP and connects to it
+  - Change dashboard views remotely
+  - View real-time system stats (CPU, RAM, storage, network IP)
+  - Configure alarms and send media remotely
 
 ---
 
-## Setup Guide
-
-For full step-by-step instructions on setting up DashMob on your Samsung M34 (or any non-rooted Android device) via Termux, Chrome PWA, SD Card mounting, and desktop remote control, see **[SETUP_GUIDE.md](file:///home/zaevo/repos/dash_mob/SETUP_GUIDE.md)**.
+For full step-by-step instructions on setting up vigild on your Samsung M34 (or any non-rooted Android device) via Termux, Chrome PWA, SD Card mounting, and desktop remote control, see **[SETUP_GUIDE.md](file:///home/zaevo/repos/dash_mob/SETUP_GUIDE.md)**.

@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "DashMob - Send to Dock",
+  "name": "vigild - Send to Dock",
   "version": "1.0.0",
-  "description": "Send current YouTube video and playback timestamp directly to your DashMob phone dock.",
+  "description": "Send current YouTube video and playback timestamp directly to your vigild phone dock.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Send to DashMob Dock"
+    "default_title": "Send to vigild Dock"
   },
   "permissions": [
     "activeTab",

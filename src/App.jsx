@@ -5,7 +5,7 @@ import { AlarmCenter } from './components/AlarmCenter';
 import { StorageMonitor } from './components/StorageMonitor';
 import { StorageDirectoryPanel } from './components/StorageDirectoryPanel';
 import { NowPlaying } from './components/NowPlaying';
-import { Clock, Bell, HardDrive, Smartphone, Zap } from 'lucide-react';
+import { Clock, Bell, HardDrive, Zap } from 'lucide-react';
 
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -20,22 +20,19 @@ const MainLayout = () => {
         if ('wakeLock' in navigator) {
           wakeLock = await navigator.wakeLock.request('screen');
           setWakeLockActive(true);
-          console.log('[Screen Wake Lock] Active - Phone screen will stay awake continuously');
 
           wakeLock.addEventListener('release', () => {
             setWakeLockActive(false);
-            console.log('[Screen Wake Lock] Released');
           });
         }
       } catch (err) {
-        console.warn('[Screen Wake Lock Not Granted]', err.message);
         setWakeLockActive(false);
       }
     };
 
     requestWakeLock();
 
-    // Re-acquire Wake Lock when user switches back to DashMob tab/app
+    // Re-acquire Wake Lock when user switches back to vigild tab/app
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         requestWakeLock();
@@ -75,21 +72,20 @@ const MainLayout = () => {
         height: '36px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ 
-            width: '26px', 
-            height: '26px', 
-            background: 'var(--red)', 
-            borderRadius: '5px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            boxShadow: 'var(--shadow-ember)',
-            flexShrink: 0
-          }}>
-            <Smartphone size={15} style={{ color: '#fff' }} />
-          </div>
+          <img 
+            src="/vigild_app_icon.png" 
+            alt="vigild" 
+            style={{ 
+              width: '26px', 
+              height: '26px', 
+              borderRadius: '5px', 
+              objectFit: 'cover',
+              boxShadow: 'var(--shadow-ember)',
+              flexShrink: 0 
+            }} 
+          />
           <h1 className="font-display" style={{ fontSize: '1.2rem', letterSpacing: '1px', color: 'var(--text)', lineHeight: '1', whiteSpace: 'nowrap' }}>
-            DASH<span style={{ color: 'var(--red-ember)' }}>MOB</span>
+            VIGI<span style={{ color: 'var(--red-ember)' }}>LD</span>
           </h1>
 
           {/* Screen Wake Lock Status Badge */}
