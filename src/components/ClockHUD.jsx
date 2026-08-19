@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Clock, Bell, Radio, Maximize2, Minimize2 } from 'lucide-react';
+import { Bell, Radio, Maximize2, Minimize2 } from 'lucide-react';
 
 export const ClockHUD = () => {
   const { alarms, isConnected, system } = useDashboard();
@@ -30,49 +30,49 @@ export const ClockHUD = () => {
   const minutes = String(time.getMinutes()).padStart(2, '0');
   const seconds = String(time.getSeconds()).padStart(2, '0');
 
-  const options = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+  const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
   const dateStr = time.toLocaleDateString('en-US', options);
 
   const enabledAlarms = alarms.filter(a => a.enabled);
   const nextAlarm = enabledAlarms.length > 0 ? enabledAlarms[0] : null;
 
   return (
-    <div className="panel-card active-ember" style={{ textAlign: 'center', padding: '20px 24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div className="panel-card active-ember" style={{ textAlign: 'center', padding: 'clamp(10px, 1.5vh, 16px)', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
       {/* Top HUD Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <span className={`badge ${isConnected ? 'badge-green' : 'badge-red'}`}>
-            <Radio size={12} className={isConnected ? 'animate-pulse' : ''} />
-            {isConnected ? 'NODE ONLINE' : 'OFFLINE'}
+            <Radio size={10} className={isConnected ? 'animate-pulse' : ''} />
+            {isConnected ? 'ONLINE' : 'OFFLINE'}
           </span>
           {system?.network?.primaryIp && (
-            <span className="badge badge-amber font-mono">
-              http://{system.network.primaryIp}:{system.network.port}
+            <span className="badge badge-amber font-mono" style={{ fontSize: '0.65rem' }}>
+              {system.network.primaryIp}:{system.network.port}
             </span>
           )}
         </div>
         <button 
           onClick={toggleFullscreen}
-          style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+          style={{ padding: '3px 6px', fontSize: '0.65rem' }}
           title="Toggle High-Tech Desk Kiosk Mode"
         >
-          {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-          {isFullscreen ? 'EXIT DOCK' : 'DESK DOCK'}
+          {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+          {isFullscreen ? 'EXIT' : 'DOCK'}
         </button>
       </div>
 
       {/* Main Clock Display */}
-      <div style={{ margin: '12px 0' }}>
+      <div style={{ margin: 'auto 0' }}>
         <div 
           className="clock-display" 
           style={{ 
-            fontSize: 'clamp(2.8rem, 8vh, 5.5rem)', 
+            fontSize: 'clamp(2.2rem, 7vh, 4.8rem)', 
             fontWeight: '700',
             lineHeight: '1',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'baseline',
-            gap: '6px'
+            gap: '4px'
           }}
         >
           <span>{hours}:{minutes}</span>
@@ -82,10 +82,10 @@ export const ClockHUD = () => {
         <div style={{ 
           color: 'var(--text2)', 
           fontFamily: 'var(--mono)', 
-          fontSize: '0.95rem',
-          marginTop: '6px',
+          fontSize: 'clamp(0.75rem, 1.5vh, 0.9rem)',
+          marginTop: '4px',
           textTransform: 'uppercase',
-          letterSpacing: '2px'
+          letterSpacing: '1px'
         }}>
           {dateStr}
         </div>
@@ -96,20 +96,23 @@ export const ClockHUD = () => {
         background: 'var(--bg2)', 
         border: '1px solid var(--border)', 
         borderRadius: 'var(--radius-sm)', 
-        padding: '10px 14px',
+        padding: '6px 10px',
         textAlign: 'left',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bell size={16} style={{ color: 'var(--red-ember)' }} />
-          <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>NEXT SCHEDULED ALARM</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text)', fontWeight: '600' }}>{nextAlarm ? nextAlarm.label : 'None Configured'}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+          <Bell size={14} style={{ color: 'var(--red-ember)', flexShrink: 0 }} />
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>NEXT ALARM</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {nextAlarm ? nextAlarm.label : 'None'}
+            </div>
           </div>
         </div>
-        <div style={{ fontSize: '1.2rem', fontWeight: '700', fontFamily: 'var(--mono)', color: nextAlarm ? 'var(--red-ember)' : 'var(--text3)' }}>
+        <div style={{ fontSize: '1rem', fontWeight: '700', fontFamily: 'var(--mono)', color: nextAlarm ? 'var(--red-ember)' : 'var(--text3)', flexShrink: 0 }}>
           {nextAlarm ? nextAlarm.time : '--:--'}
         </div>
       </div>
