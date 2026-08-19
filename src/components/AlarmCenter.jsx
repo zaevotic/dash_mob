@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Plus, Trash2, Volume2, AlertTriangle, X } from 'lucide-react';
+import { Bell, Plus, Trash2, Volume2, AlertTriangle, X, Music } from 'lucide-react';
 
 const AVAILABLE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -8,6 +8,7 @@ export const AlarmCenter = () => {
   const {
     alarms,
     activeAlarm,
+    availableTones,
     addAlarm,
     toggleAlarm,
     triggerAlarmTest,
@@ -20,20 +21,49 @@ export const AlarmCenter = () => {
   const [newTime, setNewTime] = useState('07:30');
   const [newLabel, setNewLabel] = useState('');
   const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  const [selectedTone] = useState('Cyber Pulse');
+  const [selectedToneFile, setSelectedToneFile] = useState('');
 
   const audioCtxRef = useRef(null);
   const synthTimerRef = useRef(null);
+  const audioFileRef = useRef(null);
 
-  // Web Audio Synth alarm tone player
+  // Set initial selected tone when availableTones load
+  useEffect(() => {
+    if (availableTones.length > 0 && !selectedToneFile) {
+      setSelectedToneFile(availableTones[0].filename);
+    }
+  }, [availableTones]);
+
+  // Audio tone player handler when alarm rings
   useEffect(() => {
     if (activeAlarm) {
-      startSynthAlarmSound();
+      startAlarmPlayback();
     } else {
-      stopSynthAlarmSound();
+      stopAlarmPlayback();
     }
-    return () => stopSynthAlarmSound();
+    return () => stopAlarmPlayback();
   }, [activeAlarm]);
+
+  const startAlarmPlayback = () => {
+    // Try playing HTML5 audio file first
+    if (audioFileRef.current) {
+      audioFileRef.current.currentTime = 0;
+      audioFileRef.current.play().catch(err => {
+        console.warn('[Audio Playback Blocked/Failed, using synth fallback]', err);
+        startSynthAlarmSound();
+      });
+    } else {
+      startSynthAlarmSound();
+    }
+  };
+
+  const stopAlarmPlayback = () => {
+    if (audioFileRef.current) {
+      audioFileRef.current.pause();
+      audioFileRef.current.currentTime = 0;
+    }
+    stopSynthAlarmSound();
+  };
 
   const startSynthAlarmSound = () => {
     try {
@@ -84,13 +114,20 @@ export const AlarmCenter = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!newTime) return;
+
+    const matchedToneObj = availableTones.find(t => t.filename === selectedToneFile);
+    const toneName = matchedToneObj ? matchedToneObj.name : 'Default Cyber Alarm';
+    const toneUrl = matchedToneObj ? matchedToneObj.url : '/uploads/tones/default_cyber_alarm.wav';
+
     await addAlarm({
       time: newTime,
       label: newLabel || 'Alarm',
       days: selectedDays,
-      tone: selectedTone,
+      tone: toneName,
+      toneUrl: toneUrl,
       snoozeMinutes: 5
     });
+
     setNewLabel('');
     setShowAddModal(false);
   };
@@ -141,12 +178,17 @@ export const AlarmCenter = () => {
                     {alarm.label}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
-                  {(alarm.days || []).map(day => (
-                    <span key={day} style={{ fontSize: '0.6rem', fontFamily: 'var(--mono)', color: 'var(--amber)', background: 'var(--amber-warm-dim)', padding: '1px 4px', borderRadius: '2px' }}>
-                      {day}
-                    </span>
-                  ))}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px' }}>
+                  <div style={{ display: 'flex', gap: '3px' }}>
+                    {(alarm.days || []).map(day => (
+                      <span key={day} style={{ fontSize: '0.6rem', fontFamily: 'var(--mono)', color: 'var(--amber)', background: 'var(--amber-warm-dim)', padding: '1px 4px', borderRadius: '2px' }}>
+                        {day}
+                      </span>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                    • {alarm.tone || 'Cyber Alarm'}
+                  </span>
                 </div>
               </div>
 
@@ -208,7 +250,7 @@ export const AlarmCenter = () => {
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
-              maxWidth: '400px',
+              maxWidth: '420px',
               background: 'var(--bg1)',
               border: '1px solid var(--red-ember)',
               borderRadius: 'var(--radius-md)',
@@ -241,7 +283,7 @@ export const AlarmCenter = () => {
                   <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>LABEL</label>
                   <input 
                     type="text" 
-                    placeholder="e.g. Work Focus, Morning Wakeup" 
+                    placeholder="e.g. Work Focus, Wakeup" 
                     value={newLabel} 
                     onChange={(e) => setNewLabel(e.target.value)} 
                     style={{ width: '100%', padding: '8px', fontSize: '0.85rem' }}
@@ -249,6 +291,32 @@ export const AlarmCenter = () => {
                 </div>
               </div>
 
+              {/* Tone File Selector */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>
+                  ALARM SOUND FILE (DROP AUDIO FILES IN uploads/tones/)
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Music size={16} style={{ color: 'var(--amber)' }} />
+                  <select 
+                    value={selectedToneFile} 
+                    onChange={(e) => setSelectedToneFile(e.target.value)}
+                    style={{ width: '100%', fontSize: '0.8rem' }}
+                  >
+                    {availableTones.length === 0 ? (
+                      <option value="default_cyber_alarm.wav">Default Cyber Alarm (.wav)</option>
+                    ) : (
+                      availableTones.map(tone => (
+                        <option key={tone.id} value={tone.filename}>
+                          {tone.name} ({tone.filename})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {/* Repeat Days */}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '6px' }}>REPEAT DAYS</label>
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -288,7 +356,7 @@ export const AlarmCenter = () => {
         </div>
       )}
 
-      {/* ACTIVE RINGING ALARM MODAL OVERLAY */}
+      {/* ACTIVE RINGING ALARM MODAL OVERLAY WITH AUDIO SOUND FILE */}
       {activeAlarm && (
         <div style={{
           position: 'fixed',
@@ -303,6 +371,14 @@ export const AlarmCenter = () => {
           justifyContent: 'center',
           padding: '20px'
         }}>
+          {/* HTML5 Audio Player for Alarm Tone File */}
+          <audio 
+            ref={audioFileRef} 
+            src={activeAlarm.toneUrl || '/uploads/tones/default_cyber_alarm.wav'} 
+            loop 
+            preload="auto"
+          />
+
           <div 
             className="alarm-ringing-overlay"
             style={{
@@ -319,9 +395,12 @@ export const AlarmCenter = () => {
             <h1 style={{ fontSize: '3rem', fontFamily: 'var(--mono)', fontWeight: '900', color: '#fff', margin: '8px 0' }}>
               {activeAlarm.time}
             </h1>
-            <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginBottom: '8px' }}>
               {activeAlarm.label}
             </h2>
+            <div style={{ fontSize: '0.8rem', color: 'var(--amber)', fontFamily: 'var(--mono)', marginBottom: '24px' }}>
+              SOUND TONE: {activeAlarm.tone || 'Cyber Alarm'}
+            </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button 

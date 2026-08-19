@@ -18,17 +18,23 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'development' ? 3001 : 3000);
 
 app.use(cors());
 app.use(express.json());
 
-// Serve static uploaded files
+// Serve static uploaded files and alarm audio tone files
 const UPLOADS_DIR = path.join(__dirname, '../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 app.use('/uploads', express.static(UPLOADS_DIR));
+
+const TONES_DIR = path.join(UPLOADS_DIR, 'tones');
+if (!fs.existsSync(TONES_DIR)) {
+  fs.mkdirSync(TONES_DIR, { recursive: true });
+}
+app.use('/uploads/tones', express.static(TONES_DIR));
 
 // WebSocket broadcast helper
 function broadcast(type, payload) {
@@ -47,7 +53,6 @@ app.set('wssClientCount', () => wss.clients.size);
 wss.on('connection', (ws) => {
   console.log('[WSS] Client connected. Total active clients:', wss.clients.size);
 
-  // Send initial full state payload on connect
   ws.send(JSON.stringify({
     type: 'INITIAL_STATE',
     payload: {
@@ -118,7 +123,8 @@ setInterval(() => {
       id: matchingAlarm.id,
       time: matchingAlarm.time,
       label: matchingAlarm.label,
-      tone: matchingAlarm.tone,
+      tone: matchingAlarm.tone || 'Default Cyber Alarm',
+      toneUrl: matchingAlarm.toneUrl || '/uploads/tones/default_cyber_alarm.wav',
       triggeredAt: new Date().toISOString()
     };
     db.set('activeAlarm', triggered);
@@ -136,9 +142,21 @@ if (fs.existsSync(DIST_DIR)) {
   });
 }
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`====================================================`);
-  console.log(` DashMob Server Running on http://0.0.0.0:${PORT}`);
-  console.log(` Uploads folder: ${UPLOADS_DIR}`);
-  console.log(`====================================================`);
-});
+function startServer(portToTry) {
+  server.listen(portToTry, '0.0.0.0', () => {
+    console.log(`====================================================`);
+    console.log(` DashMob Server Running on http://0.0.0.0:${portToTry}`);
+    console.log(` Uploads folder: ${UPLOADS_DIR}`);
+    console.log(` Tones folder: ${TONES_DIR}`);
+    console.log(`====================================================`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && portToTry === 3000) {
+      console.log(`[Server] Port 3000 in use (e.g. Vite dev server), trying port 3001...`);
+      startServer(3001);
+    } else {
+      console.error('[Server Error]', err);
+    }
+  });
+}
+
+startServer(PORT);

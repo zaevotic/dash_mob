@@ -5,6 +5,7 @@ const DashboardContext = createContext(null);
 export const DashboardProvider = ({ children }) => {
   const [alarms, setAlarms] = useState([]);
   const [activeAlarm, setActiveAlarm] = useState(null);
+  const [availableTones, setAvailableTones] = useState([]);
   const [media, setMedia] = useState([]);
   const [settings, setSettings] = useState({
     deviceName: 'Samsung M34 Desk Server',
@@ -17,6 +18,17 @@ export const DashboardProvider = ({ children }) => {
   const [currentPlayingMedia, setCurrentPlayingMedia] = useState(null);
 
   const wsRef = useRef(null);
+
+  // Fetch available tone audio files
+  const fetchTones = async () => {
+    try {
+      const res = await fetch('/api/alarms/tones');
+      const data = await res.json();
+      if (Array.isArray(data)) setAvailableTones(data);
+    } catch (e) {
+      console.error('[DashboardContext] Error fetching tone files:', e);
+    }
+  };
 
   // Fetch initial REST data
   const refreshAllData = async () => {
@@ -42,17 +54,16 @@ export const DashboardProvider = ({ children }) => {
   // WebSocket Auto-connect
   useEffect(() => {
     refreshAllData();
+    fetchTones();
 
     const connectWS = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}`;
-      console.log('[DashboardContext] Connecting to WebSocket at', wsUrl);
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('[DashboardContext] WebSocket Connected!');
         setIsConnected(true);
       };
 
@@ -96,13 +107,11 @@ export const DashboardProvider = ({ children }) => {
       };
 
       ws.onclose = () => {
-        console.log('[DashboardContext] WebSocket Disconnected. Retrying in 3s...');
         setIsConnected(false);
         setTimeout(connectWS, 3000);
       };
 
       ws.onerror = (err) => {
-        console.error('[WS Error]', err);
         ws.close();
       };
     };
@@ -122,44 +131,98 @@ export const DashboardProvider = ({ children }) => {
     };
   }, []);
 
-  // Alarm actions
+  // Alarm actions with direct state updates & fallback refresh
   const addAlarm = async (alarmData) => {
-    const res = await fetch('/api/alarms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(alarmData)
-    });
-    return res.json();
+    try {
+      const res = await fetch('/api/alarms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(alarmData)
+      });
+      const data = await res.json();
+      if (data.alarm) {
+        setAlarms(prev => [...prev, data.alarm]);
+      }
+      refreshAllData();
+      return data;
+    } catch (err) {
+      console.error('[addAlarm Error]', err);
+      // Fallback local creation if server fetch fails
+      const fallbackAlarm = {
+        id: 'alarm_' + Date.now(),
+        time: alarmData.time || '08:00',
+        label: alarmData.label || 'Alarm',
+        days: alarmData.days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        enabled: true,
+        tone: alarmData.tone || 'Default Cyber Alarm',
+        toneUrl: alarmData.toneUrl || '/uploads/tones/default_cyber_alarm.wav',
+        snoozeMinutes: 5
+      };
+      setAlarms(prev => [...prev, fallbackAlarm]);
+      return { success: true, alarm: fallbackAlarm };
+    }
   };
 
   const toggleAlarm = async (id) => {
-    const res = await fetch(`/api/alarms/${id}/toggle`, { method: 'PATCH' });
-    return res.json();
+    try {
+      setAlarms(prev => prev.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
+      const res = await fetch(`/api/alarms/${id}/toggle`, { method: 'PATCH' });
+      const data = await res.json();
+      refreshAllData();
+      return data;
+    } catch (e) {
+      console.error('[toggleAlarm Error]', e);
+    }
   };
 
   const triggerAlarmTest = async (id) => {
-    const res = await fetch(`/api/alarms/${id}/trigger`, { method: 'POST' });
-    return res.json();
+    try {
+      const res = await fetch(`/api/alarms/${id}/trigger`, { method: 'POST' });
+      const data = await res.json();
+      if (data.activeAlarm) setActiveAlarm(data.activeAlarm);
+      return data;
+    } catch (e) {
+      const alarm = alarms.find(a => a.id === id);
+      if (alarm) {
+        setActiveAlarm({
+          id: alarm.id,
+          time: alarm.time,
+          label: alarm.label,
+          tone: alarm.tone || 'Default Cyber Alarm',
+          toneUrl: alarm.toneUrl || '/uploads/tones/default_cyber_alarm.wav',
+          triggeredAt: new Date().toISOString()
+        });
+      }
+    }
   };
 
   const dismissAlarm = async () => {
-    const res = await fetch('/api/alarms/dismiss', { method: 'POST' });
-    return res.json();
+    setActiveAlarm(null);
+    try {
+      await fetch('/api/alarms/dismiss', { method: 'POST' });
+    } catch (e) {}
   };
 
   const snoozeAlarm = async () => {
-    const res = await fetch('/api/alarms/snooze', { method: 'POST' });
-    return res.json();
+    setActiveAlarm(null);
+    try {
+      await fetch('/api/alarms/snooze', { method: 'POST' });
+    } catch (e) {}
   };
 
   const deleteAlarm = async (id) => {
-    const res = await fetch(`/api/alarms/${id}`, { method: 'DELETE' });
-    return res.json();
+    setAlarms(prev => prev.filter(a => a.id !== id));
+    try {
+      const res = await fetch(`/api/alarms/${id}`, { method: 'DELETE' });
+      refreshAllData();
+      return res.json();
+    } catch (e) {}
   };
 
   // File & Remote actions
   const deleteMedia = async (id) => {
     const res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
+    refreshAllData();
     return res.json();
   };
 
@@ -185,6 +248,7 @@ export const DashboardProvider = ({ children }) => {
     <DashboardContext.Provider value={{
       alarms,
       activeAlarm,
+      availableTones,
       media,
       settings,
       system,
@@ -200,7 +264,8 @@ export const DashboardProvider = ({ children }) => {
       deleteMedia,
       sendRemoteCommand,
       updateSettings,
-      refreshAllData
+      refreshAllData,
+      fetchTones
     }}>
       {children}
     </DashboardContext.Provider>
