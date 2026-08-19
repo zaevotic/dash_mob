@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "DashMob - Send to Dock",
+  "version": "1.0.0",
+  "description": "Send current YouTube video and playback timestamp directly to your DashMob phone dock.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Send to DashMob Dock"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/watch*"],
+      "js": ["content.js"]
+    }
+  ]
+}

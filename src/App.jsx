@@ -89,7 +89,7 @@ const MainLayout = () => {
         {activeTab === 'all' && (
           <div className="hud-layout">
             <div className="hud-col-main">
-              <ClockHUD />
+              <ClockHUD onEditAlarm={() => setActiveTab('alarms')} />
             </div>
 
             <div className="hud-col-side">
@@ -105,7 +105,7 @@ const MainLayout = () => {
 
         {activeTab === 'clock' && (
           <div style={{ height: '100%', minHeight: 0 }}>
-            <ClockHUD />
+            <ClockHUD onEditAlarm={() => setActiveTab('alarms')} />
           </div>
         )}
 

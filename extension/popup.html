@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 280px;
+      margin: 0;
+      padding: 14px;
+      background-color: #0a0908;
+      color: #d9d2c4;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      box-sizing: border-box;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #2b1414;
+      padding-bottom: 8px;
+    }
+    .badge {
+      background: #b6182b;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .title {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .accent {
+      color: #ff2436;
+    }
+    .info-box {
+      background: #161010;
+      border: 1px solid #2b1414;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+    .video-title {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .time-info {
+      color: #c47c2e;
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .btn {
+      width: 100%;
+      background: #b6182b;
+      color: #ffffff;
+      border: 1px solid #ff2436;
+      border-radius: 6px;
+      padding: 10px;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 36, 54, 0.3);
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #ff2436;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .settings {
+      margin-top: 12px;
+      font-size: 11px;
+    }
+    label {
+      display: block;
+      color: #7a736a;
+      margin-bottom: 4px;
+    }
+    input[type="text"] {
+      width: 100%;
+      background: #120d0c;
+      border: 1px solid #2b1414;
+      color: #d9d2c4;
+      padding: 6px;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 11px;
+      text-align: center;
+      font-family: monospace;
+    }
+    .status.success { color: #5a8a4a; }
+    .status.error { color: #ff2436; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="badge">DOCK</span>
+    <span class="title">DASH<span class="accent">MOB</span></span>
+  </div>
+
+  <div id="videoInfo" class="info-box">
+    <div id="videoTitle" class="video-title">Detecting YouTube video...</div>
+    <div id="videoTime" class="time-info">Timestamp: 00:00</div>
+  </div>
+
+  <button id="sendBtn" class="btn">SEND TO DOCK</button>
+
+  <div class="settings">
+    <label for="serverUrl">Dock Server IP / URL:</label>
+    <input type="text" id="serverUrl" value="http://localhost:3000" placeholder="e.g. http://192.168.1.15:3000">
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

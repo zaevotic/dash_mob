@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Play, Pause, SkipBack, SkipForward, Maximize2, Minimize2, Video, Music, Film, Disc } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Maximize2, Minimize2, Video, Music, Disc, Youtube, ExternalLink, AlertCircle } from 'lucide-react';
 
 function formatTime(seconds) {
   if (!seconds || isNaN(seconds)) return '00:00';
@@ -22,13 +22,23 @@ export const NowPlaying = () => {
 
   const { currentMedia, isPlaying, currentTime, duration } = playbackState;
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [embedError, setEmbedError] = useState(false);
+  
   const mediaRef = useRef(null);
+  const iframeRef = useRef(null);
 
-  const isVideo = currentMedia?.type === 'video' || (currentMedia?.filename && /\.(mp4|mkv|webm|mov|avi)$/i.test(currentMedia.filename));
-  const isAudio = currentMedia?.type === 'audio' || (currentMedia?.filename && /\.(mp3|wav|ogg|m4a|flac)$/i.test(currentMedia.filename));
+  const isYouTube = currentMedia?.type === 'youtube' || !!currentMedia?.videoId;
+  const isVideo = !isYouTube && (currentMedia?.type === 'video' || (currentMedia?.filename && /\.(mp4|mkv|webm|mov|avi)$/i.test(currentMedia.filename)));
+  const isAudio = !isYouTube && (currentMedia?.type === 'audio' || (currentMedia?.filename && /\.(mp3|wav|ogg|m4a|flac)$/i.test(currentMedia.filename)));
 
-  // Sync HTML5 media element with context state
+  // Reset embed error on media change
   useEffect(() => {
+    setEmbedError(false);
+  }, [currentMedia?.id, currentMedia?.videoId]);
+
+  // Sync native HTML5 media element (for local vault files)
+  useEffect(() => {
+    if (isYouTube) return;
     const elem = mediaRef.current;
     if (!elem) return;
 
@@ -37,11 +47,22 @@ export const NowPlaying = () => {
     } else {
       elem.pause();
     }
-  }, [isPlaying, currentMedia]);
+  }, [isPlaying, currentMedia, isYouTube]);
 
-  // Sync current time from media element
-  const handleTimeUpdate = () => {
-    if (!mediaRef.current) return;
+  // Handle transport controls for YouTube iframe via postMessage
+  useEffect(() => {
+    if (!isYouTube || !iframeRef.current) return;
+    try {
+      const funcName = isPlaying ? 'playVideo' : 'pauseVideo';
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: funcName, args: [] }),
+        '*'
+      );
+    } catch (e) {}
+  }, [isPlaying, isYouTube]);
+
+  const handleNativeTimeUpdate = () => {
+    if (!mediaRef.current || isYouTube) return;
     const cur = mediaRef.current.currentTime;
     const dur = mediaRef.current.duration || 0;
     sendPlaybackUpdate({ currentTime: cur, duration: dur });
@@ -53,28 +74,41 @@ export const NowPlaying = () => {
 
   const handleSeek = (e) => {
     const targetTime = parseFloat(e.target.value);
-    if (mediaRef.current) {
+    if (isYouTube && iframeRef.current) {
+      try {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func: 'seekTo', args: [targetTime, true] }),
+          '*'
+        );
+      } catch (err) {}
+    } else if (mediaRef.current) {
       mediaRef.current.currentTime = targetTime;
     }
     seekPlayback(targetTime);
   };
+
+  const youtubeUrl = isYouTube && currentMedia?.videoId
+    ? `https://www.youtube.com/embed/${currentMedia.videoId}?enablejsapi=1&autoplay=1&start=${Math.floor(currentTime || 0)}`
+    : '';
 
   return (
     <div className="panel-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '10px 12px' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isVideo ? (
+          {isYouTube ? (
+            <Youtube size={16} style={{ color: '#ff0000' }} />
+          ) : isVideo ? (
             <Video size={16} style={{ color: 'var(--red-ember)' }} />
           ) : (
             <Music size={16} style={{ color: 'var(--amber)' }} />
           )}
           <h2 style={{ fontSize: '0.85rem', fontFamily: 'var(--mono)', textTransform: 'uppercase', color: 'var(--text)' }}>
-            NOW PLAYING
+            {isYouTube ? 'YOUTUBE DOCK STREAM' : 'NOW PLAYING'}
           </h2>
         </div>
 
-        {isVideo && currentMedia && (
+        {(isVideo || isYouTube) && currentMedia && !embedError && (
           <button 
             onClick={() => setIsFullscreen(true)}
             title="Expand Fullscreen Video"
@@ -102,12 +136,65 @@ export const NowPlaying = () => {
         }}>
           <Disc size={28} style={{ color: 'var(--text3)', opacity: 0.5 }} />
           <div>Nothing playing</div>
-          <div style={{ fontSize: '0.65rem', color: 'var(--text3)' }}>Select media from STORAGE vault</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text3)' }}>Send YouTube video or select vault file</div>
         </div>
       ) : (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', justifyContent: 'space-between' }}>
-          {/* Video or Audio Preview Area */}
-          {isVideo ? (
+          
+          {/* YOUTUBE EMBED PLAYER BRANCH */}
+          {isYouTube ? (
+            embedError ? (
+              <div style={{
+                flex: 1,
+                minHeight: 0,
+                background: 'var(--bg2)',
+                border: '1px solid var(--red-ember)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                gap: '8px'
+              }}>
+                <AlertCircle size={28} style={{ color: 'var(--red-ember)' }} />
+                <div style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: '600' }}>
+                  This YouTube video cannot be embedded
+                </div>
+                <a 
+                  href={`https://www.youtube.com/watch?v=${currentMedia.videoId}`}
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="btn-primary"
+                  style={{ fontSize: '0.7rem', padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <ExternalLink size={12} /> OPEN ON YOUTUBE
+                </a>
+              </div>
+            ) : (
+              <div style={{ 
+                flex: 1, 
+                minHeight: 0, 
+                background: '#000', 
+                borderRadius: 'var(--radius-sm)', 
+                overflow: 'hidden',
+                position: 'relative',
+                marginBottom: '6px'
+              }}>
+                <iframe
+                  ref={iframeRef}
+                  src={youtubeUrl}
+                  title={currentMedia.title || currentMedia.originalname}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  onError={() => setEmbedError(true)}
+                  style={{ width: '100%', height: '100%', border: 'none', minHeight: '130px' }}
+                />
+              </div>
+            )
+          ) : isVideo ? (
+            /* LOCAL VIDEO VAULT BRANCH */
             <div style={{ 
               flex: 1, 
               minHeight: 0, 
@@ -123,13 +210,14 @@ export const NowPlaying = () => {
               <video
                 ref={mediaRef}
                 src={currentMedia.url}
-                onTimeUpdate={handleTimeUpdate}
+                onTimeUpdate={handleNativeTimeUpdate}
                 onEnded={handleEnded}
                 playsInline
                 style={{ width: '100%', height: '100%', objectFit: 'contain', maxHeight: '140px' }}
               />
             </div>
           ) : (
+            /* LOCAL AUDIO VAULT BRANCH */
             <div style={{ 
               flex: 1, 
               minHeight: 0, 
@@ -145,7 +233,7 @@ export const NowPlaying = () => {
               <audio
                 ref={mediaRef}
                 src={currentMedia.url}
-                onTimeUpdate={handleTimeUpdate}
+                onTimeUpdate={handleNativeTimeUpdate}
                 onEnded={handleEnded}
               />
               <div style={{ 
@@ -172,12 +260,10 @@ export const NowPlaying = () => {
             </div>
           )}
 
-          {/* Media Info & Title (For Video Mode) */}
-          {isVideo && (
-            <div style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '4px' }}>
-              {currentMedia.originalname || currentMedia.filename}
-            </div>
-          )}
+          {/* Title Banner */}
+          <div style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '4px' }}>
+            {currentMedia.title || currentMedia.originalname || currentMedia.filename}
+          </div>
 
           {/* Scrub Bar & Controls */}
           <div style={{ flexShrink: 0 }}>
@@ -199,7 +285,7 @@ export const NowPlaying = () => {
               </span>
             </div>
 
-            {/* Transport Control Buttons */}
+            {/* Transport Controls */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
               <button 
                 onClick={playPrevMedia} 
@@ -230,7 +316,7 @@ export const NowPlaying = () => {
       )}
 
       {/* FULLSCREEN VIDEO OVERLAY MODAL */}
-      {isFullscreen && isVideo && currentMedia && (
+      {isFullscreen && currentMedia && (isVideo || isYouTube) && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -251,14 +337,14 @@ export const NowPlaying = () => {
             left: 0,
             right: 0,
             padding: '12px 16px',
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)',
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.85), transparent)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             zIndex: 10
           }}>
             <div style={{ color: '#fff', fontSize: '0.9rem', fontFamily: 'var(--mono)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '80%' }}>
-              {currentMedia.originalname || currentMedia.filename}
+              {currentMedia.title || currentMedia.originalname || currentMedia.filename}
             </div>
             <button 
               onClick={() => setIsFullscreen(false)}
@@ -279,14 +365,24 @@ export const NowPlaying = () => {
             </button>
           </div>
 
-          {/* Fullscreen Video Viewport */}
-          <video
-            src={currentMedia.url}
-            autoPlay={isPlaying}
-            controls
-            playsInline
-            style={{ width: '100vw', height: '100dvh', objectFit: 'contain' }}
-          />
+          {/* Fullscreen Video / YouTube iFrame */}
+          {isYouTube ? (
+            <iframe
+              src={youtubeUrl}
+              title={currentMedia.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: '100vw', height: '100dvh', border: 'none' }}
+            />
+          ) : (
+            <video
+              src={currentMedia.url}
+              autoPlay={isPlaying}
+              controls
+              playsInline
+              style={{ width: '100vw', height: '100dvh', objectFit: 'contain' }}
+            />
+          )}
         </div>
       )}
     </div>

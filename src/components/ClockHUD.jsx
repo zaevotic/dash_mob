@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Radio, Maximize2, Minimize2 } from 'lucide-react';
+import { Bell, Radio, Maximize2, Minimize2, Edit3 } from 'lucide-react';
 
-export const ClockHUD = () => {
+export const ClockHUD = ({ onEditAlarm }) => {
   const { alarms, isConnected, system } = useDashboard();
   const [time, setTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -92,21 +92,27 @@ export const ClockHUD = () => {
       </div>
 
       {/* Next Alarm Summary Card */}
-      <div style={{ 
-        background: 'var(--bg2)', 
-        border: '1px solid var(--border)', 
-        borderRadius: 'var(--radius-sm)', 
-        padding: '10px 14px',
-        textAlign: 'left',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexShrink: 0
-      }}>
+      <div 
+        onClick={() => onEditAlarm && onEditAlarm(nextAlarm)}
+        style={{ 
+          background: 'var(--bg2)', 
+          border: '1px solid var(--border)', 
+          borderRadius: 'var(--radius-sm)', 
+          padding: '10px 14px',
+          textAlign: 'left',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+          cursor: 'pointer'
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
           <Bell size={18} style={{ color: 'var(--red-ember)', flexShrink: 0 }} />
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>NEXT SCHEDULED ALARM</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text2)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              NEXT SCHEDULED ALARM <Edit3 size={10} style={{ color: 'var(--amber)' }} />
+            </div>
             <div style={{ fontSize: '0.9rem', color: 'var(--text)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {nextAlarm ? nextAlarm.label : 'None Configured'}
             </div>

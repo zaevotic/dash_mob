@@ -10,6 +10,7 @@ import { db } from './db.js';
 import filesRouter from './routes/files.js';
 import alarmsRouter from './routes/alarms.js';
 import systemRouter, { resolveStoragePath } from './routes/system.js';
+import playbackRouter from './routes/playback.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -102,6 +103,7 @@ wss.on('connection', (ws) => {
 app.use('/api/files', filesRouter);
 app.use('/api/alarms', alarmsRouter);
 app.use('/api/system', systemRouter);
+app.use('/api/playback', playbackRouter);
 
 // Background alarm trigger loop (checks every 10 seconds)
 let lastTriggeredMinute = '';

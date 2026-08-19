@@ -227,6 +227,22 @@ export const DashboardProvider = ({ children }) => {
     }
   };
 
+  const updateAlarm = async (id, alarmData) => {
+    try {
+      setAlarms(prev => prev.map(a => a.id === id ? { ...a, ...alarmData } : a));
+      const res = await fetch(`/api/alarms/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(alarmData)
+      });
+      const data = await res.json();
+      refreshAllData();
+      return data;
+    } catch (e) {
+      console.error('[updateAlarm Error]', e);
+    }
+  };
+
   const toggleAlarm = async (id) => {
     try {
       setAlarms(prev => prev.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
@@ -317,6 +333,7 @@ export const DashboardProvider = ({ children }) => {
       playPrevMedia,
       sendPlaybackUpdate,
       addAlarm,
+      updateAlarm,
       toggleAlarm,
       triggerAlarmTest,
       dismissAlarm,

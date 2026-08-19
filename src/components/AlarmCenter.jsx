@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Plus, Trash2, Volume2, AlertTriangle, X, Music } from 'lucide-react';
+import { CustomKeyboard } from './CustomKeyboard';
+import { Bell, Plus, Trash2, Volume2, AlertTriangle, X, Music, Edit3, Keyboard } from 'lucide-react';
 
 const AVAILABLE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export const AlarmCenter = () => {
+export const AlarmCenter = ({ onEditAlarmExternal }) => {
   const {
     alarms,
     activeAlarm,
     availableTones,
     addAlarm,
+    updateAlarm,
     toggleAlarm,
     triggerAlarmTest,
     dismissAlarm,
@@ -18,23 +20,27 @@ export const AlarmCenter = () => {
   } = useDashboard();
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingAlarmId, setEditingAlarmId] = useState(null);
+
   const [newTime, setNewTime] = useState('07:30');
   const [newLabel, setNewLabel] = useState('');
   const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
   const [selectedToneFile, setSelectedToneFile] = useState('');
 
+  const [showKeyboard, setShowKeyboard] = useState(false);
+
   const audioCtxRef = useRef(null);
   const synthTimerRef = useRef(null);
   const audioFileRef = useRef(null);
 
-  // Set initial selected tone when availableTones load
+  // Set initial tone when availableTones load
   useEffect(() => {
     if (availableTones.length > 0 && !selectedToneFile) {
       setSelectedToneFile(availableTones[0].filename);
     }
   }, [availableTones]);
 
-  // Audio tone player handler when alarm rings
+  // Handle ring audio playback
   useEffect(() => {
     if (activeAlarm) {
       startAlarmPlayback();
@@ -45,11 +51,10 @@ export const AlarmCenter = () => {
   }, [activeAlarm]);
 
   const startAlarmPlayback = () => {
-    // Try playing HTML5 audio file first
     if (audioFileRef.current) {
       audioFileRef.current.currentTime = 0;
       audioFileRef.current.play().catch(err => {
-        console.warn('[Audio Playback Blocked/Failed, using synth fallback]', err);
+        console.warn('[Audio Playback Blocked, using synth fallback]', err);
         startSynthAlarmSound();
       });
     } else {
@@ -71,9 +76,7 @@ export const AlarmCenter = () => {
         audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
       const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (ctx.state === 'suspended') ctx.resume();
 
       let step = 0;
       synthTimerRef.current = setInterval(() => {
@@ -91,9 +94,7 @@ export const AlarmCenter = () => {
         osc.stop(ctx.currentTime + 0.3);
         step++;
       }, 500);
-    } catch (e) {
-      console.error('[WebAudio Error]', e);
-    }
+    } catch (e) {}
   };
 
   const stopSynthAlarmSound = () => {
@@ -101,6 +102,25 @@ export const AlarmCenter = () => {
       clearInterval(synthTimerRef.current);
       synthTimerRef.current = null;
     }
+  };
+
+  const openNewAlarmModal = () => {
+    setEditingAlarmId(null);
+    setNewTime('07:30');
+    setNewLabel('');
+    setSelectedDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+    if (availableTones.length > 0) setSelectedToneFile(availableTones[0].filename);
+    setShowAddModal(true);
+  };
+
+  const openEditAlarmModal = (alarm) => {
+    setEditingAlarmId(alarm.id);
+    setNewTime(alarm.time);
+    setNewLabel(alarm.label);
+    setSelectedDays(alarm.days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+    const matchedTone = availableTones.find(t => t.name === alarm.tone || t.url === alarm.toneUrl);
+    if (matchedTone) setSelectedToneFile(matchedTone.filename);
+    setShowAddModal(true);
   };
 
   const handleDayToggle = (day) => {
@@ -111,7 +131,7 @@ export const AlarmCenter = () => {
     }
   };
 
-  const handleCreate = async (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!newTime) return;
 
@@ -119,14 +139,20 @@ export const AlarmCenter = () => {
     const toneName = matchedToneObj ? matchedToneObj.name : 'Default Cyber Alarm';
     const toneUrl = matchedToneObj ? matchedToneObj.url : '/uploads/tones/default_cyber_alarm.wav';
 
-    await addAlarm({
+    const payload = {
       time: newTime,
       label: newLabel || 'Alarm',
       days: selectedDays,
       tone: toneName,
       toneUrl: toneUrl,
       snoozeMinutes: 5
-    });
+    };
+
+    if (editingAlarmId) {
+      await updateAlarm(editingAlarmId, payload);
+    } else {
+      await addAlarm(payload);
+    }
 
     setNewLabel('');
     setShowAddModal(false);
@@ -142,7 +168,7 @@ export const AlarmCenter = () => {
             ALARM HUB
           </h2>
         </div>
-        <button className="btn-primary" onClick={() => setShowAddModal(true)} style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
+        <button className="btn-primary" onClick={openNewAlarmModal} style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
           <Plus size={14} />
           ADD ALARM
         </button>
@@ -158,6 +184,7 @@ export const AlarmCenter = () => {
           alarms.map(alarm => (
             <div 
               key={alarm.id} 
+              onClick={() => openEditAlarmModal(alarm)}
               style={{
                 background: alarm.enabled ? 'var(--bg2)' : 'var(--bg)',
                 border: `1px solid ${alarm.enabled ? 'var(--border2)' : 'var(--border)'}`,
@@ -166,7 +193,8 @@ export const AlarmCenter = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                opacity: alarm.enabled ? 1 : 0.65
+                opacity: alarm.enabled ? 1 : 0.65,
+                cursor: 'pointer'
               }}
             >
               <div>
@@ -177,6 +205,7 @@ export const AlarmCenter = () => {
                   <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
                     {alarm.label}
                   </span>
+                  <Edit3 size={12} style={{ color: 'var(--text3)', marginLeft: '4px' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px' }}>
                   <div style={{ display: 'flex', gap: '3px' }}>
@@ -192,7 +221,7 @@ export const AlarmCenter = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
                 <button 
                   onClick={() => triggerAlarmTest(alarm.id)} 
                   title="Test Ring Alarm Remotely"
@@ -227,7 +256,7 @@ export const AlarmCenter = () => {
         )}
       </div>
 
-      {/* FLOATING ADD ALARM MODAL OVERLAY */}
+      {/* FLOATING ADD / EDIT ALARM MODAL OVERLAY */}
       {showAddModal && (
         <div 
           onClick={() => setShowAddModal(false)}
@@ -260,14 +289,14 @@ export const AlarmCenter = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ fontSize: '1rem', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--text)' }}>
-                NEW ALARM SCHEDULE
+                {editingAlarmId ? 'EDIT ALARM SETTINGS' : 'NEW ALARM SCHEDULE'}
               </div>
               <button onClick={() => setShowAddModal(false)} style={{ padding: '4px', background: 'transparent', border: 'none', color: 'var(--text2)' }}>
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreate}>
+            <form onSubmit={handleSave}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', marginBottom: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>TIME</label>
@@ -280,21 +309,30 @@ export const AlarmCenter = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>LABEL</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Work Focus, Wakeup" 
-                    value={newLabel} 
-                    onChange={(e) => setNewLabel(e.target.value)} 
-                    style={{ width: '100%', padding: '8px', fontSize: '0.85rem' }}
-                  />
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>LABEL (TAP FOR KEYBOARD)</label>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Work Focus" 
+                      value={newLabel} 
+                      readOnly
+                      onClick={() => setShowKeyboard(true)}
+                      onFocus={(e) => { e.target.blur(); setShowKeyboard(true); }}
+                      style={{ width: '100%', padding: '8px 30px 8px 8px', fontSize: '0.85rem', cursor: 'pointer' }}
+                    />
+                    <Keyboard 
+                      size={15} 
+                      onClick={() => setShowKeyboard(true)} 
+                      style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--red-ember)', cursor: 'pointer' }} 
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Tone File Selector */}
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text2)', marginBottom: '4px' }}>
-                  ALARM SOUND FILE (DROP AUDIO FILES IN uploads/tones/)
+                  ALARM SOUND FILE (`uploads/tones/`)
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Music size={16} style={{ color: 'var(--amber)' }} />
@@ -343,20 +381,42 @@ export const AlarmCenter = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => setShowAddModal(false)} style={{ padding: '8px 14px' }}>
-                  CANCEL
-                </button>
-                <button type="submit" className="btn-primary" style={{ padding: '8px 16px' }}>
-                  SAVE ALARM
-                </button>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between', alignItems: 'center' }}>
+                {editingAlarmId ? (
+                  <button 
+                    type="button" 
+                    onClick={() => { deleteAlarm(editingAlarmId); setShowAddModal(false); }}
+                    style={{ padding: '8px 12px', color: 'var(--red-ember)', borderColor: 'var(--red-mute)', fontSize: '0.8rem' }}
+                  >
+                    <Trash2 size={13} /> DELETE
+                  </button>
+                ) : <div />}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" onClick={() => setShowAddModal(false)} style={{ padding: '8px 14px' }}>
+                    CANCEL
+                  </button>
+                  <button type="submit" className="btn-primary" style={{ padding: '8px 16px' }}>
+                    {editingAlarmId ? 'UPDATE ALARM' : 'SAVE ALARM'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ACTIVE RINGING ALARM MODAL OVERLAY WITH AUDIO SOUND FILE */}
+      {/* CUSTOM TOUCH KEYBOARD PANE MODAL */}
+      {showKeyboard && (
+        <CustomKeyboard 
+          value={newLabel}
+          onChange={(val) => setNewLabel(val)}
+          onClose={() => setShowKeyboard(false)}
+          title="TYPE ALARM LABEL"
+        />
+      )}
+
+      {/* ACTIVE RINGING ALARM MODAL */}
       {activeAlarm && (
         <div style={{
           position: 'fixed',
@@ -371,7 +431,6 @@ export const AlarmCenter = () => {
           justifyContent: 'center',
           padding: '20px'
         }}>
-          {/* HTML5 Audio Player for Alarm Tone File */}
           <audio 
             ref={audioFileRef} 
             src={activeAlarm.toneUrl || '/uploads/tones/default_cyber_alarm.wav'} 
