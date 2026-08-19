@@ -2,39 +2,75 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { db } from '../db.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const UPLOADS_DIR = path.join(__dirname, '../../uploads');
-
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
+import { resolveStoragePath } from './system.js';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, UPLOADS_DIR);
+    const uploadDir = resolveStoragePath();
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+    cb(null, `${path.basename(file.originalname, ext)}-${uniqueSuffix}${ext}`);
   }
 });
 
 const upload = multer({ storage });
 const router = express.Router();
 
-// Get list of media files
+// Get list of physical media/files on SD card storage
 router.get('/', (req, res) => {
-  const mediaList = db.get('media') || [];
-  res.json(mediaList);
+  const storageDir = resolveStoragePath();
+  const dbMedia = db.get('media') || [];
+
+  try {
+    if (fs.existsSync(storageDir)) {
+      const dirFiles = fs.readdirSync(storageDir);
+      const fileItems = dirFiles.map(file => {
+        const fullPath = path.join(storageDir, file);
+        try {
+          const stats = fs.statSync(fullPath);
+          if (!stats.isFile()) return null;
+
+          const matchedDb = dbMedia.find(m => m.filename === file);
+          const ext = path.extname(file).toLowerCase();
+
+          let fileType = 'other';
+          if (['.mp4', '.mkv', '.webm', '.avi', '.mov'].includes(ext)) fileType = 'video';
+          else if (['.mp3', '.wav', '.ogg', '.m4a', '.flac'].includes(ext)) fileType = 'audio';
+          else if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext)) fileType = 'image';
+
+          return {
+            id: matchedDb ? matchedDb.id : 'file_' + file,
+            originalname: matchedDb ? matchedDb.originalname : file,
+            filename: file,
+            size: stats.size,
+            type: fileType,
+            uploadDate: stats.mtime.toISOString(),
+            url: `/uploads/${file}`
+          };
+        } catch (e) {
+          return null;
+        }
+      }).filter(Boolean);
+
+      // Sort newest first
+      fileItems.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+      return res.json(fileItems);
+    }
+  } catch (err) {
+    console.error('[FILES] Error reading storage directory:', err);
+  }
+
+  res.json(dbMedia);
 });
 
-// Upload media file (offload from laptop/phone)
+// Upload media/file to SD card storage
 router.post('/upload', upload.single('mediaFile'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
@@ -61,7 +97,6 @@ router.post('/upload', upload.single('mediaFile'), (req, res) => {
   mediaList.unshift(newItem);
   db.set('media', mediaList);
 
-  // Broadcast to WebSockets via app handler
   if (req.app.get('wssBroadcast')) {
     req.app.get('wssBroadcast')('MEDIA_UPDATED', mediaList);
   }
@@ -69,19 +104,22 @@ router.post('/upload', upload.single('mediaFile'), (req, res) => {
   res.json({ success: true, file: newItem });
 });
 
-// Delete media file
+// Delete file from SD card storage
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
+  const storageDir = resolveStoragePath();
   const mediaList = db.get('media') || [];
-  const fileIndex = mediaList.findIndex(item => item.id === id);
 
-  if (fileIndex === -1) {
-    return res.status(404).json({ error: 'File not found' });
+  const fileIndex = mediaList.findIndex(item => item.id === id || item.filename === id);
+  let filenameToDelete = id;
+
+  if (fileIndex !== -1) {
+    filenameToDelete = mediaList[fileIndex].filename;
+    mediaList.splice(fileIndex, 1);
+    db.set('media', mediaList);
   }
 
-  const item = mediaList[fileIndex];
-  const filePath = path.join(UPLOADS_DIR, item.filename);
-
+  const filePath = path.join(storageDir, filenameToDelete);
   if (fs.existsSync(filePath)) {
     try {
       fs.unlinkSync(filePath);
@@ -89,9 +127,6 @@ router.delete('/:id', (req, res) => {
       console.error('[FILES] Error deleting file:', e);
     }
   }
-
-  mediaList.splice(fileIndex, 1);
-  db.set('media', mediaList);
 
   if (req.app.get('wssBroadcast')) {
     req.app.get('wssBroadcast')('MEDIA_UPDATED', mediaList);

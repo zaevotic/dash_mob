@@ -9,32 +9,39 @@ import { fileURLToPath } from 'url';
 import { db } from './db.js';
 import filesRouter from './routes/files.js';
 import alarmsRouter from './routes/alarms.js';
-import systemRouter from './routes/system.js';
+import systemRouter, { resolveStoragePath } from './routes/system.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ noServer: true });
 
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'development' ? 3001 : 3000);
 
 app.use(cors());
 app.use(express.json());
 
-// Serve static uploaded files and alarm audio tone files
-const UPLOADS_DIR = path.join(__dirname, '../uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-app.use('/uploads', express.static(UPLOADS_DIR));
+// Dynamic SD Card / Uploads static folder serving
+app.use('/uploads', (req, res, next) => {
+  const targetDir = resolveStoragePath();
+  express.static(targetDir)(req, res, next);
+});
 
-const TONES_DIR = path.join(UPLOADS_DIR, 'tones');
+// Tones folder
+const TONES_DIR = path.join(__dirname, '../uploads/tones');
 if (!fs.existsSync(TONES_DIR)) {
   fs.mkdirSync(TONES_DIR, { recursive: true });
 }
 app.use('/uploads/tones', express.static(TONES_DIR));
+
+// Handle HTTP upgrade requests for WebSocket
+server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
 
 // WebSocket broadcast helper
 function broadcast(type, payload) {
@@ -51,7 +58,7 @@ app.set('wssClientCount', () => wss.clients.size);
 
 // WebSocket connection handler
 wss.on('connection', (ws) => {
-  console.log('[WSS] Client connected. Total active clients:', wss.clients.size);
+  console.log('[WSS] Client connected across network! Total active clients:', wss.clients.size);
 
   ws.send(JSON.stringify({
     type: 'INITIAL_STATE',
@@ -128,7 +135,7 @@ setInterval(() => {
       triggeredAt: new Date().toISOString()
     };
     db.set('activeAlarm', triggered);
-    console.log(`[ALARM] Triggering scheduled alarm: ${matchingAlarm.label} (${matchingAlarm.time})`);
+    console.log(`[ALARM] Triggering scheduled alarm across network: ${matchingAlarm.label} (${matchingAlarm.time})`);
     broadcast('ALARM_TRIGGERED', triggered);
   }
 }, 10000);
@@ -146,12 +153,12 @@ function startServer(portToTry) {
   server.listen(portToTry, '0.0.0.0', () => {
     console.log(`====================================================`);
     console.log(` DashMob Server Running on http://0.0.0.0:${portToTry}`);
-    console.log(` Uploads folder: ${UPLOADS_DIR}`);
+    console.log(` SD Card / Uploads folder: ${resolveStoragePath()}`);
     console.log(` Tones folder: ${TONES_DIR}`);
     console.log(`====================================================`);
   }).on('error', (err) => {
     if (err.code === 'EADDRINUSE' && portToTry === 3000) {
-      console.log(`[Server] Port 3000 in use (e.g. Vite dev server), trying port 3001...`);
+      console.log(`[Server] Port 3000 in use, trying port 3001...`);
       startServer(3001);
     } else {
       console.error('[Server Error]', err);

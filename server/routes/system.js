@@ -8,9 +8,42 @@ import { db } from '../db.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const UPLOADS_DIR = path.join(__dirname, '../../uploads');
-
 const router = express.Router();
+
+export function resolveStoragePath() {
+  const settings = db.get('settings') || {};
+  if (settings.storagePath && fs.existsSync(settings.storagePath)) {
+    return settings.storagePath;
+  }
+  if (process.env.SD_CARD_PATH && fs.existsSync(process.env.SD_CARD_PATH)) {
+    return process.env.SD_CARD_PATH;
+  }
+  // Common Android SD Card paths
+  const androidPaths = ['/sdcard', '/storage/emulated/0'];
+  for (const p of androidPaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  // Search external MicroSD in /storage
+  if (fs.existsSync('/storage')) {
+    try {
+      const dirs = fs.readdirSync('/storage');
+      for (const d of dirs) {
+        if (d !== 'emulated' && d !== 'self') {
+          const fullPath = path.join('/storage', d);
+          if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+            return fullPath;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  // Fallback to local uploads directory
+  const fallbackPath = path.join(__dirname, '../../uploads');
+  if (!fs.existsSync(fallbackPath)) {
+    fs.mkdirSync(fallbackPath, { recursive: true });
+  }
+  return fallbackPath;
+}
 
 function getLocalNetworkIPs() {
   const interfaces = os.networkInterfaces();
@@ -25,43 +58,72 @@ function getLocalNetworkIPs() {
   return addresses.length > 0 ? addresses : [{ name: 'loopback', address: '127.0.0.1' }];
 }
 
-function getUploadsStorageBytes() {
+export function getStorageStats() {
+  const storagePath = resolveStoragePath();
   try {
-    if (!fs.existsSync(UPLOADS_DIR)) return 0;
-    const files = fs.readdirSync(UPLOADS_DIR);
-    let totalSize = 0;
-    for (const file of files) {
-      const stats = fs.statSync(path.join(UPLOADS_DIR, file));
-      totalSize += stats.size;
+    if (fs.statfsSync) {
+      const stats = fs.statfsSync(storagePath);
+      const totalBytes = stats.blocks * stats.bsize;
+      const freeBytes = stats.bavail * stats.bsize;
+      const usedBytes = totalBytes - freeBytes;
+
+      const usedGB = parseFloat((usedBytes / (1024 ** 3)).toFixed(2));
+      const maxGB = parseFloat((totalBytes / (1024 ** 3)).toFixed(2));
+      const percentage = totalBytes > 0 ? parseFloat(((usedBytes / totalBytes) * 100).toFixed(1)) : 0;
+
+      return {
+        storagePath,
+        usedBytes,
+        usedGB,
+        maxGB: maxGB || 128,
+        percentage,
+        isSdCard: storagePath !== path.join(__dirname, '../../uploads')
+      };
     }
-    return totalSize;
   } catch (err) {
-    console.error('[SYSTEM] Error calculating storage size:', err);
-    return 0;
+    console.error('[SYSTEM] Error reading statfs:', err.message);
+  }
+
+  // Fallback calculation by directory size
+  try {
+    const files = fs.readdirSync(storagePath);
+    let usedBytes = 0;
+    for (const file of files) {
+      try {
+        const stats = fs.statSync(path.join(storagePath, file));
+        if (stats.isFile()) usedBytes += stats.size;
+      } catch (e) {}
+    }
+    const maxGB = (db.get('settings') || {}).maxStorageGB || 128;
+    const maxBytes = maxGB * 1024 * 1024 * 1024;
+    const usedGB = parseFloat((usedBytes / (1024 ** 3)).toFixed(2));
+    const percentage = parseFloat(((usedBytes / maxBytes) * 100).toFixed(1));
+
+    return {
+      storagePath,
+      usedBytes,
+      usedGB,
+      maxGB,
+      percentage,
+      isSdCard: false
+    };
+  } catch (e) {
+    return { storagePath, usedBytes: 0, usedGB: 0, maxGB: 128, percentage: 0, isSdCard: false };
   }
 }
 
 router.get('/', (req, res) => {
   const settings = db.get('settings') || {};
-  const usedBytes = getUploadsStorageBytes();
-  const maxGB = settings.maxStorageGB || 128;
-  const maxBytes = maxGB * 1024 * 1024 * 1024;
-  const usedGB = (usedBytes / (1024 * 1024 * 1024)).toFixed(2);
-  const percentage = Math.min(100, ((usedBytes / maxBytes) * 100).toFixed(1));
-
+  const storage = getStorageStats();
   const networkIPs = getLocalNetworkIPs();
   const wssClients = req.app.get('wssClientCount') ? req.app.get('wssClientCount')() : 1;
 
   res.json({
-    settings,
-    storage: {
-      usedBytes,
-      usedGB: parseFloat(usedGB),
-      maxGB,
-      maxBytes,
-      percentage: parseFloat(percentage),
-      fileCount: (db.get('media') || []).length
+    settings: {
+      ...settings,
+      storagePath: storage.storagePath
     },
+    storage,
     network: {
       ips: networkIPs,
       primaryIp: networkIPs[0]?.address || '127.0.0.1',

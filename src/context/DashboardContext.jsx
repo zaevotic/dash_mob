@@ -51,69 +51,81 @@ export const DashboardProvider = ({ children }) => {
     }
   };
 
-  // WebSocket Auto-connect
+  // WebSocket Auto-connect across local network
   useEffect(() => {
     refreshAllData();
     fetchTones();
 
+    let reconnectTimer = null;
+
     const connectWS = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}`;
+      // Use window.location.host or fallback to primary IP
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/ws`;
 
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
+      console.log('[DashboardContext] Connecting WebSocket to', wsUrl);
 
-      ws.onopen = () => {
-        setIsConnected(true);
-      };
+      try {
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
 
-      ws.onmessage = (event) => {
-        try {
-          const { type, payload } = JSON.parse(event.data);
+        ws.onopen = () => {
+          console.log('[DashboardContext] WebSocket Connected to Server!');
+          setIsConnected(true);
+        };
 
-          switch (type) {
-            case 'INITIAL_STATE':
-              if (payload.alarms) setAlarms(payload.alarms);
-              if (payload.activeAlarm !== undefined) setActiveAlarm(payload.activeAlarm);
-              if (payload.media) setMedia(payload.media);
-              if (payload.settings) setSettings(payload.settings);
-              break;
-            case 'ALARMS_UPDATED':
-              if (payload.alarms) setAlarms(payload.alarms);
-              if (payload.activeAlarm !== undefined) setActiveAlarm(payload.activeAlarm);
-              break;
-            case 'ALARM_TRIGGERED':
-              setActiveAlarm(payload);
-              break;
-            case 'ALARM_DISMISSED':
-            case 'ALARM_SNOOZED':
-              setActiveAlarm(null);
-              break;
-            case 'MEDIA_UPDATED':
-              setMedia(payload);
-              break;
-            case 'SETTINGS_UPDATED':
-              setSettings(payload);
-              break;
-            case 'REMOTE_PLAY_MEDIA':
-              setCurrentPlayingMedia(payload);
-              break;
-            default:
-              break;
+        ws.onmessage = (event) => {
+          try {
+            const { type, payload } = JSON.parse(event.data);
+
+            switch (type) {
+              case 'INITIAL_STATE':
+                if (payload.alarms) setAlarms(payload.alarms);
+                if (payload.activeAlarm !== undefined) setActiveAlarm(payload.activeAlarm);
+                if (payload.media) setMedia(payload.media);
+                if (payload.settings) setSettings(payload.settings);
+                break;
+              case 'ALARMS_UPDATED':
+                if (payload.alarms) setAlarms(payload.alarms);
+                if (payload.activeAlarm !== undefined) setActiveAlarm(payload.activeAlarm);
+                break;
+              case 'ALARM_TRIGGERED':
+                setActiveAlarm(payload);
+                break;
+              case 'ALARM_DISMISSED':
+              case 'ALARM_SNOOZED':
+                setActiveAlarm(null);
+                break;
+              case 'MEDIA_UPDATED':
+                setMedia(payload);
+                break;
+              case 'SETTINGS_UPDATED':
+                setSettings(payload);
+                break;
+              case 'REMOTE_PLAY_MEDIA':
+                setCurrentPlayingMedia(payload);
+                break;
+              default:
+                break;
+            }
+          } catch (e) {
+            console.error('[WS Parse Error]', e);
           }
-        } catch (e) {
-          console.error('[WS Parse Error]', e);
-        }
-      };
+        };
 
-      ws.onclose = () => {
-        setIsConnected(false);
-        setTimeout(connectWS, 3000);
-      };
+        ws.onclose = () => {
+          setIsConnected(false);
+          reconnectTimer = setTimeout(connectWS, 3000);
+        };
 
-      ws.onerror = (err) => {
-        ws.close();
-      };
+        ws.onerror = () => {
+          ws.close();
+        };
+      } catch (err) {
+        console.error('[WS Connection Error]', err);
+        reconnectTimer = setTimeout(connectWS, 3000);
+      }
     };
 
     connectWS();
@@ -123,10 +135,11 @@ export const DashboardProvider = ({ children }) => {
         const sysRes = await fetch('/api/system').then(r => r.json());
         if (sysRes) setSystem(sysRes);
       } catch (e) {}
-    }, 15000);
+    }, 10000);
 
     return () => {
       clearInterval(sysInterval);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       if (wsRef.current) wsRef.current.close();
     };
   }, []);
@@ -141,13 +154,15 @@ export const DashboardProvider = ({ children }) => {
       });
       const data = await res.json();
       if (data.alarm) {
-        setAlarms(prev => [...prev, data.alarm]);
+        setAlarms(prev => {
+          const exists = prev.some(a => a.id === data.alarm.id);
+          return exists ? prev : [...prev, data.alarm];
+        });
       }
       refreshAllData();
       return data;
     } catch (err) {
       console.error('[addAlarm Error]', err);
-      // Fallback local creation if server fetch fails
       const fallbackAlarm = {
         id: 'alarm_' + Date.now(),
         time: alarmData.time || '08:00',
@@ -241,6 +256,7 @@ export const DashboardProvider = ({ children }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newSettings)
     });
+    refreshAllData();
     return res.json();
   };
 
